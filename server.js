@@ -37,6 +37,13 @@ function send(ws, msg) {
   if (ws && ws.readyState === 1) ws.send(JSON.stringify(msg));
 }
 
+// Функция для рассылки статуса хода обоим игрокам
+function sendTurn(room) {
+  if (!room || !room.players[0] || !room.players[1]) return;
+  send(room.players[0], { type: 'turn-update', yourTurn: room.turn === 0 });
+  send(room.players[1], { type: 'turn-update', yourTurn: room.turn === 1 });
+}
+
 wss.on('connection', (ws) => {
   ws.roomCode = null;
   ws.slot = null;
@@ -79,7 +86,7 @@ wss.on('connection', (ws) => {
       room.ready[ws.slot] = true;
       if (room.ready[0] && room.ready[1]) {
         const first = Math.random() < 0.5 ? 0 : 1;
-        room.turn = first; // Запоминаем, чей ход
+        room.turn = first;
         send(room.players[0], { type: 'start', yourTurn: first === 0 });
         send(room.players[1], { type: 'start', yourTurn: first === 1 });
       } else {
@@ -89,18 +96,21 @@ wss.on('connection', (ws) => {
     }
 
     if (msg.type === 'shot') {
-      // Строгая проверка: если стреляет не тот, чей ход — игнорируем
       if (room.turn !== ws.slot) return; 
+      // Пересылаем выстрел сопернику
       send(opp, { type: 'opponent-shot', r: msg.r, c: msg.c });
       return;
     }
 
     if (msg.type === 'shot-result') {
-      // Если промах — передаем ход другому
+      // Если промах — меняем ход
       if (msg.result === 'miss') {
         room.turn = 1 - room.turn;
       }
+      // Отправляем результат стрелявшему
       send(opp, msg);
+      // Рассылаем новый статус хода обоим
+      sendTurn(room);
       return;
     }
   });
