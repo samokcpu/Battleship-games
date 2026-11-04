@@ -47,7 +47,7 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'create') {
       const code = genRoomCode();
-      rooms.set(code, { players: [ws, null], ready: [false, false] });
+      rooms.set(code, { players: [ws, null], ready: [false, false], turn: 0 });
       ws.roomCode = code;
       ws.slot = 0;
       send(ws, { type: 'created', roomId: code, slot: 0 });
@@ -64,13 +64,9 @@ wss.on('connection', (ws) => {
       ws.roomCode = code;
       ws.slot = 1;
       
-      // Отправляем подтверждение входа второму игроку
       send(ws, { type: 'joined', roomId: code, slot: 1 });
-      
-      // ГЛАВНОЕ: переводим ОБОИХ игроков на экран расстановки
       send(room.players[0], { type: 'opponent-joined' });
       send(room.players[1], { type: 'opponent-joined' }); 
-      
       return;
     }
 
@@ -83,6 +79,7 @@ wss.on('connection', (ws) => {
       room.ready[ws.slot] = true;
       if (room.ready[0] && room.ready[1]) {
         const first = Math.random() < 0.5 ? 0 : 1;
+        room.turn = first; // Запоминаем, чей ход
         send(room.players[0], { type: 'start', yourTurn: first === 0 });
         send(room.players[1], { type: 'start', yourTurn: first === 1 });
       } else {
@@ -92,11 +89,17 @@ wss.on('connection', (ws) => {
     }
 
     if (msg.type === 'shot') {
+      // Строгая проверка: если стреляет не тот, чей ход — игнорируем
+      if (room.turn !== ws.slot) return; 
       send(opp, { type: 'opponent-shot', r: msg.r, c: msg.c });
       return;
     }
 
     if (msg.type === 'shot-result') {
+      // Если промах — передаем ход другому
+      if (msg.result === 'miss') {
+        room.turn = 1 - room.turn;
+      }
       send(opp, msg);
       return;
     }
