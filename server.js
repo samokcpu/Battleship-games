@@ -64,6 +64,7 @@ wss.on('connection', (ws) => {
       ws.slot = 1;
       send(ws, { type: 'joined', roomId: code, slot: 1 });
       send(room.players[0], { type: 'opponent-joined' });
+      console.log('Комната', code, '— подключился второй игрок');
       return;
     }
 
