@@ -690,17 +690,42 @@ function handleShotResult(r,c,result){
     cell.sunk = true; 
     S.enemySunk++; 
     
-    // МАГИЯ АВТО-КЛЕТОК: Окружаем потопленную клетку серыми зонами
-    for (let dr = -1; dr <= 1; dr++) {
-      for (let dc = -1; dc <= 1; dc++) {
-        const nr = r + dr;
-        const nc = c + dc;
+    // МАГИЯ: Находим все соседние потопленные клетки, чтобы понять размер и форму корабля
+    let shipCells = [{r, c}];
+    const queue = [{r, c}];
+    const visited = new Set();
+    visited.add(r + ',' + c);
+
+    // Ищем вширь все связанные красные клетки, которые мы уже подбили
+    while (queue.length > 0) {
+      const curr = queue.shift();
+      const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+      for (let [dr, dc] of dirs) {
+        const nr = curr.r + dr, nc = curr.c + dc;
         if (nr >= 0 && nr < 10 && nc >= 0 && nc < 10) {
-          const neighbor = S.enemyGrid[nr][nc];
-          if (!neighbor.shot) {
-            neighbor.shot = true;
-            neighbor.miss = true; 
-            neighbor.autoMiss = true;
+          const key = nr + ',' + nc;
+          if (!visited.has(key) && S.enemyGrid[nr][nc].shot && S.enemyGrid[nr][nc].hit) {
+            visited.add(key);
+            shipCells.push({r: nr, c: nc});
+            queue.push({r: nr, c: nc});
+          }
+        }
+      }
+    }
+
+    // Теперь закрашиваем 3x3 вокруг КАЖДОЙ клетки найденного корабля
+    for (let shipCell of shipCells) {
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const nr = shipCell.r + dr;
+          const nc = shipCell.c + dc;
+          if (nr >= 0 && nr < 10 && nc >= 0 && nc < 10) {
+            const neighbor = S.enemyGrid[nr][nc];
+            if (!neighbor.shot) {
+              neighbor.shot = true;
+              neighbor.miss = true; 
+              neighbor.autoMiss = true;
+            }
           }
         }
       }
