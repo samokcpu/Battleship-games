@@ -253,7 +253,7 @@ function createGrid(){
   const g = [];
   for(let r=0;r<SIZE;r++){
     g.push([]);
-    for(let c=0;c<SIZE;c++) g[r].push({ship:null, shot:false, sunk:false});
+    for(let c=0;c<SIZE;c++) g[r].push({ship:null, shot:false, sunk:false, autoMiss:false});
   }
   return g;
 }
@@ -397,7 +397,7 @@ function handleMessage(msg){
     case 'shot-result': {
       handleShotResult(msg.r, msg.c, msg.result);
       break;
-    }  
+    }
     case 'turn-update': {
       S.myTurn = msg.yourTurn;
       updateStatusText();
@@ -640,8 +640,6 @@ function shootAt(r,c){
   if(S.phase !== 'game' || !S.myTurn) return;
   const cell = S.enemyGrid[r][c];
   if(cell.shot) return;
-  
-  // Оптимистично блокируем ход на клиенте
   S.myTurn = false;
   updateStatusText();
   updateTitles();
@@ -683,11 +681,35 @@ function handleIncomingShot(r,c){
 function handleShotResult(r,c,result){
   const cell = S.enemyGrid[r][c];
   cell.shot = true;
-  if(result === 'miss') cell.miss = true;
-  else if(result === 'hit') cell.hit = true;
-  else if(result === 'sunk'){ cell.sunk = true; S.enemySunk++; }
+  
+  if(result === 'miss') {
+    cell.miss = true;
+  } else if(result === 'hit') {
+    cell.hit = true;
+  } else if(result === 'sunk') { 
+    cell.sunk = true; 
+    S.enemySunk++; 
+    
+    // МАГИЯ АВТО-КЛЕТОК: Окружаем потопленную клетку серыми зонами
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        const nr = r + dr;
+        const nc = c + dc;
+        if (nr >= 0 && nr < 10 && nc >= 0 && nc < 10) {
+          const neighbor = S.enemyGrid[nr][nc];
+          if (!neighbor.shot) {
+            neighbor.shot = true;
+            neighbor.miss = true; 
+            neighbor.autoMiss = true;
+          }
+        }
+      }
+    }
+  }
+  
   renderEnemyBoard();
   updateScoreText();
+  
   if(S.enemySunk >= 10){
     $('resultBox').classList.remove('lose');
     $('resultBox').classList.add('win');
@@ -698,7 +720,12 @@ function handleShotResult(r,c,result){
     setTimeout(()=>showScreen('screenResult'), 600);
     return;
   }
-  S.myTurn = (result !== 'miss');
+  
+  if(result === 'miss') {
+    S.myTurn = false;
+  } else {
+    S.myTurn = true;
+  }
   updateStatusText();
   updateTitles();
 }
