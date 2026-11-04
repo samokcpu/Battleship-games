@@ -634,6 +634,8 @@ function shootAt(r,c){
   if(S.phase !== 'game' || !S.myTurn) return;
   const cell = S.enemyGrid[r][c];
   if(cell.shot) return;
+  
+  // Оптимистично блокируем ход на клиенте
   S.myTurn = false;
   updateStatusText();
   updateTitles();
