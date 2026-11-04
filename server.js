@@ -37,7 +37,6 @@ function send(ws, msg) {
   if (ws && ws.readyState === 1) ws.send(JSON.stringify(msg));
 }
 
-// Функция для рассылки статуса хода обоим игрокам
 function sendTurn(room) {
   if (!room || !room.players[0] || !room.players[1]) return;
   send(room.players[0], { type: 'turn-update', yourTurn: room.turn === 0 });
@@ -97,20 +96,16 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'shot') {
       if (room.turn !== ws.slot) return; 
-      // Пересылаем выстрел сопернику
       send(opp, { type: 'opponent-shot', r: msg.r, c: msg.c });
       return;
     }
 
     if (msg.type === 'shot-result') {
-      // Если промах — меняем ход
       if (msg.result === 'miss') {
         room.turn = 1 - room.turn;
       }
-      // Отправляем результат стрелявшему
       send(opp, msg);
-      // Рассылаем новый статус хода обоим
-      sendTurn(room);
+      sendTurn(room); // Отправляем новый статус хода обоим
       return;
     }
   });
