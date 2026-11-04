@@ -37,12 +37,6 @@ function send(ws, msg) {
   if (ws && ws.readyState === 1) ws.send(JSON.stringify(msg));
 }
 
-function sendTurn(room) {
-  if (!room || !room.players[0] || !room.players[1]) return;
-  send(room.players[0], { type: 'turn-update', yourTurn: room.turn === 0 });
-  send(room.players[1], { type: 'turn-update', yourTurn: room.turn === 1 });
-}
-
 wss.on('connection', (ws) => {
   ws.roomCode = null;
   ws.slot = null;
@@ -101,11 +95,18 @@ wss.on('connection', (ws) => {
     }
 
     if (msg.type === 'shot-result') {
+      // Если промах — меняем ход на другого
       if (msg.result === 'miss') {
         room.turn = 1 - room.turn;
       }
+      
+      // Отправляем результат тому, кто стрелял
       send(opp, msg);
-      sendTurn(room); // Отправляем новый статус хода обоим
+      
+      // ЖЕЛЕЗНО рассылаем обновление хода ОБОИМ игрокам
+      send(room.players[0], { type: 'turn-update', yourTurn: room.turn === 0 });
+      send(room.players[1], { type: 'turn-update', yourTurn: room.turn === 1 });
+      
       return;
     }
   });
