@@ -59,12 +59,18 @@ wss.on('connection', (ws) => {
       const room = rooms.get(code);
       if (!room) { send(ws, { type: 'error', message: 'Комната не найдена: ' + code }); return; }
       if (room.players[1]) { send(ws, { type: 'error', message: 'Комната уже заполнена' }); return; }
+      
       room.players[1] = ws;
       ws.roomCode = code;
       ws.slot = 1;
+      
+      // Отправляем подтверждение входа второму игроку
       send(ws, { type: 'joined', roomId: code, slot: 1 });
+      
+      // ГЛАВНОЕ: переводим ОБОИХ игроков на экран расстановки
       send(room.players[0], { type: 'opponent-joined' });
-      console.log('Комната', code, '— подключился второй игрок');
+      send(room.players[1], { type: 'opponent-joined' }); 
+      
       return;
     }
 
