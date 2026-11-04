@@ -397,6 +397,12 @@ function handleMessage(msg){
     case 'shot-result': {
       handleShotResult(msg.r, msg.c, msg.result);
       break;
+    }  
+    case 'turn-update': {
+      S.myTurn = msg.yourTurn;
+      updateStatusText();
+      updateTitles();
+      break;
     }
     case 'opponent-left': {
       toast('Соперник покинул игру');
