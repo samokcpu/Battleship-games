@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Морской бой — онлайн</title>
+<title>Морской бой</title>
 <style>
   :root{
     --bg-deep:#0a1929; --bg-panel:#0f2438; --bg-cell:#1a3a52;
@@ -57,6 +57,7 @@
   .conn-dot{display:inline-block;width:8px;height:8px;border-radius:50%;
             background:var(--hit);margin-right:6px;vertical-align:middle}
   .conn-dot.online{background:var(--valid)}
+  
   .game-container{display:flex;gap:56px;flex-wrap:wrap;justify-content:center;align-items:flex-start;width:100%}
   .board-section{display:flex;flex-direction:column;align-items:center;gap:10px}
   .board-title{font-size:.95rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;
@@ -139,33 +140,41 @@
 </head>
 <body>
 
+<!-- ГЛАВНЫЙ ЭКРАН -->
 <div class="screen active" id="screenLobby">
-  <h1>⚓ Морской бой — онлайн</h1>
-  <h2>Играйте с другом на любых устройствах</h2>
+  <h1>⚓ Морской бой</h1>
+  
+  <div class="panel">
+    <h3>Игра с компьютером</h3>
+    <p>Выберите уровень сложности ИИ:</p>
+    <div class="btn-row">
+      <button class="btn btn-small btn-ai" data-diff="novice">Новичок</button>
+      <button class="btn btn-small btn-ai" data-diff="amateur">Любитель</button>
+      <button class="btn btn-small btn-ai" data-diff="pro">Профи</button>
+      <button class="btn btn-small btn-ai" data-diff="worldclass">Мировой класс</button>
+    </div>
+  </div>
 
   <div class="panel">
     <div style="font-size:.85rem;color:var(--text-dim);margin-bottom:12px">
       <span class="conn-dot" id="connDot"></span>
       <span id="connText">Подключение к серверу…</span>
     </div>
-    <h3>Создать комнату</h3>
-    <p>Вы получите трёхзначный код — передайте его второму игроку.</p>
-    <button class="btn btn-accent" id="btnCreate" disabled>Создать комнату</button>
+    <h3>Игра по сети (с другом)</h3>
+    <div class="btn-row" style="margin-bottom:0">
+      <button class="btn btn-accent" id="btnCreate" disabled>Создать комнату</button>
+    </div>
     <div class="code-display" id="roomCodeDisplay" style="display:none">—</div>
     <div class="status" id="statusCreate"></div>
-  </div>
-
-  <div class="panel">
-    <h3>Присоединиться</h3>
-    <div class="field">
-      <label for="inputRoom">Код комнаты (3 цифры)</label>
-      <input id="inputRoom" placeholder="123" maxlength="3" inputmode="numeric" autocomplete="off">
+    <div class="field" style="margin-top:12px">
+      <input id="inputRoom" placeholder="Код комнаты" maxlength="3" inputmode="numeric">
     </div>
     <button class="btn" id="btnJoin" disabled>Войти в комнату</button>
     <div class="status" id="statusJoin"></div>
   </div>
 </div>
 
+<!-- РАССТАНОВКА -->
 <div class="screen" id="screenPlacement">
   <h1>Расстановка флота</h1>
   <div class="game-container" style="align-items:flex-start">
@@ -187,10 +196,11 @@
   </div>
 </div>
 
+<!-- ИГРА -->
 <div class="screen" id="screenGame">
   <div class="status-bar">
     <div class="status-turn" id="turnIndicator">Ожидание…</div>
-    <div class="score-item">Потоплено у соперника: <strong id="scoreEnemy">0/10</strong></div>
+    <div class="score-item">Потоплено у врага: <strong id="scoreEnemy">0/10</strong></div>
     <div class="score-item">Потоплено у вас: <strong id="scorePlayer">0/10</strong></div>
   </div>
   <div class="game-container">
@@ -199,12 +209,13 @@
       <div class="board-wrapper" id="boardMy"></div>
     </div>
     <div class="board-section">
-      <div class="board-title" id="titleEnemyBoard">Поле соперника</div>
+      <div class="board-title" id="titleEnemyBoard">Поле противника</div>
       <div class="board-wrapper" id="boardEnemy"></div>
     </div>
   </div>
 </div>
 
+<!-- РЕЗУЛЬТАТ -->
 <div class="screen" id="screenResult">
   <div class="result-box" id="resultBox">
     <div class="result-icon" id="resultIcon">🏆</div>
@@ -231,10 +242,16 @@ const LETTERS = 'АБВГДЕЖЗИК';
 
 const S = {
   ws: null, connected: false, slot: null, roomId: null,
+  mode: 'ai', // 'ai' или 'online'
+  aiDiff: 'novice', // 'novice', 'amateur', 'pro', 'worldclass'
   phase: 'lobby', myTurn: false,
-  myGrid: [], enemyGrid: [], myShips: [],
+  myGrid: [], enemyGrid: [], myShips: [], aiShips: [],
   orientation: 'h', placedCount: [0,0,0,0], activeFleetIdx: 0,
-  mySunk: 0, enemySunk: 0
+  mySunk: 0, enemySunk: 0,
+  
+  // Для ИИ
+  aiHuntQueue: [],
+  aiHits: []
 };
 
 function $(id){ return document.getElementById(id); }
@@ -278,6 +295,7 @@ function buildBoardDOM(container, onClick){
   }
 }
 
+/* ================= СЕТЬ ================= */
 function setConnection(online, text){
   S.connected = online;
   $('connDot').classList.toggle('online', online);
@@ -288,7 +306,7 @@ function setConnection(online, text){
 
 function connect(){
   if(location.protocol === 'file:'){
-    setConnection(false, 'Откройте игру через сервер, а не как файл');
+    setConnection(false, 'Онлайн недоступен (запущен как файл)');
     return;
   }
   setConnection(false, 'Подключение к серверу…');
@@ -296,7 +314,7 @@ function connect(){
   try {
     S.ws = new WebSocket(proto + '//' + location.host);
   } catch(e){
-    setConnection(false, 'Ошибка WebSocket: ' + e.message);
+    setConnection(false, 'Ошибка WebSocket');
     return;
   }
   S.ws.addEventListener('open', ()=>{
@@ -314,9 +332,6 @@ function connect(){
   S.ws.addEventListener('close', ()=>{
     setConnection(false, 'Соединение потеряно');
   });
-  S.ws.addEventListener('error', ()=>{
-    setConnection(false, 'Ошибка соединения');
-  });
 }
 
 function wsSend(msg){
@@ -328,7 +343,17 @@ function wsSend(msg){
   return true;
 }
 
+/* ================= ЛОББИ ================= */
+document.querySelectorAll('.btn-ai').forEach(btn => {
+  btn.addEventListener('click', () => {
+    S.mode = 'ai';
+    S.aiDiff = btn.dataset.diff;
+    startPlacement();
+  });
+});
+
 $('btnCreate').addEventListener('click', ()=>{
+  S.mode = 'online';
   $('statusCreate').textContent = 'Создаём комнату…';
   $('statusCreate').className = 'status';
   $('btnCreate').disabled = true;
@@ -342,6 +367,7 @@ $('btnJoin').addEventListener('click', ()=>{
     $('statusJoin').className = 'status err';
     return;
   }
+  S.mode = 'online';
   doJoin(code);
 });
 
@@ -357,10 +383,7 @@ function handleMessage(msg){
       S.roomId = msg.roomId; S.slot = msg.slot;
       $('roomCodeDisplay').style.display = 'block';
       $('roomCodeDisplay').textContent = msg.roomId;
-      const link = location.origin + '/?room=' + msg.roomId;
-      $('statusCreate').innerHTML =
-        'Код комнаты: <strong>' + msg.roomId + '</strong><br>' +
-        'Ссылка для друга:<br><small style="word-break:break-all;color:var(--accent)">' + link + '</small>';
+      $('statusCreate').innerHTML = 'Код: <strong>' + msg.roomId + '</strong><br><small>Ждем друга...</small>';
       $('statusCreate').className = 'status ok';
       break;
     }
@@ -417,6 +440,7 @@ function handleMessage(msg){
   }
 }
 
+/* ================= РАССТАНОВКА ================= */
 function startPlacement(){
   S.phase = 'placement';
   S.myGrid = createGrid();
@@ -439,37 +463,37 @@ function currentShipSizeIdx(){
   }
   return -1;
 }
-function canPlace(r,c,size,orient){
+function canPlace(grid, r,c,size,orient){
   const cells = [];
   for(let i=0;i<size;i++){
     const rr = orient==='h' ? r : r+i;
     const cc = orient==='h' ? c+i : c;
     if(!inside(rr,cc)) return null;
-    if(S.myGrid[rr][cc].ship !== null) return null;
+    if(grid[rr][cc].ship !== null) return null;
     for(let dr=-1;dr<=1;dr++){
       for(let dc=-1;dc<=1;dc++){
         const nr=rr+dr, nc=cc+dc;
-        if(inside(nr,nc) && S.myGrid[nr][nc].ship !== null) return null;
+        if(inside(nr,nc) && grid[nr][nc].ship !== null) return null;
       }
     }
     cells.push({r:rr,c:cc});
   }
   return cells;
 }
-function placeShip(cells, size){
-  const id = S.myShips.length;
+function placeShipOnGrid(grid, ships, cells, size){
+  const id = ships.length;
   const ship = {cells, size, hits:0, sunk:false};
-  S.myShips.push(ship);
-  cells.forEach(({r,c})=>{ S.myGrid[r][c].ship = id; });
+  ships.push(ship);
+  cells.forEach(({r,c})=>{ grid[r][c].ship = id; });
 }
 function placementClick(r,c){
   if(S.phase !== 'placement') return;
   const idx = currentShipSizeIdx();
   if(idx < 0) return;
   const size = FLEET[idx].size;
-  const cells = canPlace(r,c,size,S.orientation);
+  const cells = canPlace(S.myGrid, r,c,size,S.orientation);
   if(!cells){ toast('Здесь нельзя'); return; }
-  placeShip(cells, size);
+  placeShipOnGrid(S.myGrid, S.myShips, cells, size);
   S.placedCount[idx]++;
   if(S.placedCount[idx] >= FLEET[idx].count){
     for(let i=0;i<FLEET.length;i++){
@@ -555,9 +579,9 @@ $('btnRandom').addEventListener('click', ()=>{
         const orient = Math.random() < 0.5 ? 'h' : 'v';
         const r = Math.floor(Math.random()*SIZE);
         const c = Math.floor(Math.random()*SIZE);
-        const cells = canPlace(r,c,f.size,orient);
+        const cells = canPlace(S.myGrid, r,c,f.size,orient);
         if(cells){
-          placeShip(cells, f.size); S.placedCount[fi]++; placed = true;
+          placeShipOnGrid(S.myGrid, S.myShips, cells, f.size); S.placedCount[fi]++; placed = true;
         }
         tries++;
       }
@@ -569,18 +593,47 @@ $('btnClear').addEventListener('click', ()=>{
   S.myGrid = createGrid(); S.myShips = []; S.placedCount = [0,0,0,0]; S.activeFleetIdx = 0;
   renderFleetList(); updatePlacementHint(); renderPlacementGrid();
 });
+
 $('btnReady').addEventListener('click', ()=>{
   if(currentShipSizeIdx() >= 0) return;
   $('btnReady').disabled = true;
-  $('statusPlacement').textContent = 'Ожидание соперника…';
-  wsSend({type:'fleet-ready'});
+  
+  if(S.mode === 'ai'){
+    // Генерируем корабли ИИ
+    S.enemyGrid = createGrid();
+    S.aiShips = [];
+    FLEET.forEach(f=>{
+      for(let n=0;n<f.count;n++){
+        let placed = false, tries = 0;
+        while(!placed && tries < 500){
+          const orient = Math.random() < 0.5 ? 'h' : 'v';
+          const r = Math.floor(Math.random()*SIZE);
+          const c = Math.floor(Math.random()*SIZE);
+          const cells = canPlace(S.enemyGrid, r,c,f.size,orient);
+          if(cells){
+            placeShipOnGrid(S.enemyGrid, S.aiShips, cells, f.size); placed = true;
+          }
+          tries++;
+        }
+      }
+    });
+    startGame(true); // Первый ход всегда у игрока в оффлайне
+  } else {
+    $('statusPlacement').textContent = 'Ожидание соперника…';
+    wsSend({type:'fleet-ready'});
+  }
 });
 
+/* ================= ИГРА ================= */
 function startGame(myTurn){
   S.phase = 'game';
   S.myTurn = myTurn;
-  S.enemyGrid = createGrid();
+  if(S.mode === 'online') S.enemyGrid = createGrid();
+  
   S.enemySunk = 0; S.mySunk = 0;
+  S.aiHuntQueue = [];
+  S.aiHits = [];
+  
   showScreen('screenGame');
   buildBoardDOM($('boardMy'), null);
   buildBoardDOM($('boardEnemy'), shootAt);
@@ -640,10 +693,35 @@ function shootAt(r,c){
   if(S.phase !== 'game' || !S.myTurn) return;
   const cell = S.enemyGrid[r][c];
   if(cell.shot) return;
+  
   S.myTurn = false;
   updateStatusText();
   updateTitles();
-  wsSend({type:'shot', r, c});
+  
+  if(S.mode === 'online'){
+    wsSend({type:'shot', r, c});
+  } else {
+    // Локальная обработка выстрела (режим с ИИ)
+    cell.shot = true;
+    let result = 'miss';
+    if(cell.ship !== null){
+      const ship = S.aiShips[cell.ship];
+      ship.hits++;
+      const allHit = ship.cells.every(({r:rr,c:cc})=>S.enemyGrid[rr][cc].shot);
+      if(allHit){
+        ship.sunk = true;
+        ship.cells.forEach(({r:rr,c:cc})=>{ S.enemyGrid[rr][cc].sunk = true; });
+        result = 'sunk';
+        S.enemySunk++;
+      } else {
+        result = 'hit';
+      }
+    }
+    handleShotResult(r, c, result);
+    if(S.phase === 'game' && result === 'miss'){
+      setTimeout(aiTurn, 700);
+    }
+  }
 }
 
 function handleIncomingShot(r,c){
@@ -690,13 +768,12 @@ function handleShotResult(r,c,result){
     cell.sunk = true; 
     S.enemySunk++; 
     
-    // МАГИЯ: Находим все соседние потопленные клетки, чтобы понять размер и форму корабля
+    // Умные авто-клетки
     let shipCells = [{r, c}];
     const queue = [{r, c}];
     const visited = new Set();
     visited.add(r + ',' + c);
 
-    // Ищем вширь все связанные красные клетки, которые мы уже подбили
     while (queue.length > 0) {
       const curr = queue.shift();
       const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
@@ -713,7 +790,6 @@ function handleShotResult(r,c,result){
       }
     }
 
-    // Теперь закрашиваем 3x3 вокруг КАЖДОЙ клетки найденного корабля
     for (let shipCell of shipCells) {
       for (let dr = -1; dr <= 1; dr++) {
         for (let dc = -1; dc <= 1; dc++) {
@@ -740,26 +816,156 @@ function handleShotResult(r,c,result){
     $('resultBox').classList.add('win');
     $('resultIcon').textContent = '🏆';
     $('resultTitle').textContent = 'Победа!';
-    $('resultSub').textContent = 'Вы уничтожили флот соперника!';
+    $('resultSub').textContent = 'Вы уничтожили флот противника!';
     S.phase = 'over';
     setTimeout(()=>showScreen('screenResult'), 600);
     return;
   }
   
-  if(result === 'miss') {
-    S.myTurn = false;
+  if(result !== 'miss') {
+    S.myTurn = true; // Попал — ход остается
   } else {
-    S.myTurn = true;
+    if(S.mode === 'online') S.myTurn = false; // Промахнулся — ход переходит по сети
   }
   updateStatusText();
   updateTitles();
 }
 
+/* ================= ИИ ================= */
+function aiTurn(){
+  if(S.phase !== 'game' || S.myTurn) return;
+
+  let target = null;
+
+  // 1. Умный поиск (Профи и Мировой класс)
+  if(S.aiDiff === 'pro' || S.aiDiff === 'worldclass') {
+    if(S.aiHuntQueue.length > 0) {
+      target = S.aiHuntQueue.shift();
+    } else if (S.aiHits.length > 0) {
+      // Если попали, но очередь пуста (например, уткнулись в край)
+      const lastHit = S.aiHits[S.aiHits.length - 1];
+      const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+      const validDirs = dirs.filter(([dr,dc]) => {
+        const nr = lastHit.r + dr, nc = lastHit.c + dc;
+        return inside(nr,nc) && !S.myGrid[nr][nc].shot;
+      });
+      if(validDirs.length > 0) {
+        const [dr, dc] = validDirs[Math.floor(Math.random() * validDirs.length)];
+        target = { r: lastHit.r + dr, c: lastHit.c + dc };
+      }
+    }
+  } 
+  // 2. Любитель (стреляет случайно, но если попал — бьет рядом)
+  else if(S.aiDiff === 'amateur') {
+    if(S.aiHuntQueue.length > 0) target = S.aiHuntQueue.shift();
+  }
+
+  // 3. Поиск случайной клетки
+  if(!target) {
+    const free = [];
+    for(let r=0;r<SIZE;r++){
+      for(let c=0;c<SIZE;c++){
+        if(!S.myGrid[r][c].shot) {
+          // Мировой класс использует "шахматный" поиск для эффективности
+          if (S.aiDiff === 'worldclass' && (r + c) % 2 !== 0 && free.length > 0) continue;
+          free.push({r,c});
+        }
+      }
+    }
+    if(free.length === 0) return;
+    target = free[Math.floor(Math.random() * free.length)];
+  }
+
+  // Выстрел ИИ
+  const {r,c} = target;
+  const cell = S.myGrid[r][c];
+  cell.shot = true;
+
+  if(cell.ship !== null){
+    const ship = S.myShips[cell.ship];
+    ship.hits++;
+    const allHit = ship.cells.every(({r:rr,c:cc})=>S.myGrid[rr][cc].shot);
+    
+    if(allHit){
+      ship.sunk = true;
+      ship.cells.forEach(({r:rr,c:cc})=>{ S.myGrid[rr][cc].sunk = true; });
+      S.mySunk++;
+      S.aiHuntQueue = [];
+      S.aiHits = [];
+      toast('Ваш корабль потоплен!');
+    } else {
+      S.aiHits.push({r,c});
+      // Для любителя и профи добавляем соседей в очередь
+      if(S.aiDiff === 'amateur') {
+        const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+        dirs.forEach(([dr,dc])=>{
+          const nr=r+dr, nc=c+dc;
+          if(inside(nr,nc) && !S.myGrid[nr][nc].shot && !S.aiHuntQueue.some(t=>t.r===nr&&t.c===nc)){
+            S.aiHuntQueue.push({r:nr,c:nc});
+          }
+        });
+      } 
+      // Для профи и мирового класса выстраиваем линию
+      else if (S.aiDiff === 'pro' || S.aiDiff === 'worldclass') {
+        if(S.aiHits.length >= 2) {
+          // Если есть 2 попадания, определяем направление
+          const first = S.aiHits[0];
+          const last = S.aiHits[S.aiHits.length - 1];
+          const dr = Math.sign(last.r - first.r);
+          const dc = Math.sign(last.c - first.c);
+          // Бьем в продолжение линии
+          const nr = last.r + dr, nc = last.c + dc;
+          if(inside(nr,nc) && !S.myGrid[nr][nc].shot) {
+            S.aiHuntQueue = [{r:nr, c:nc}];
+          }
+        } else {
+          // Если это первое попадание, бьем вокруг
+          const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+          dirs.forEach(([dr,dc])=>{
+            const nr=r+dr, nc=c+dc;
+            if(inside(nr,nc) && !S.myGrid[nr][nc].shot){
+              S.aiHuntQueue.push({r:nr,c:nc});
+            }
+          });
+        }
+      }
+    }
+  } else {
+    // Промах
+    S.aiHuntQueue = []; // Очищаем очередь, если промахнулись (для простоты)
+  }
+
+  renderMyBoard();
+  updateScoreText();
+
+  if(S.mySunk >= 10){
+    $('resultBox').classList.remove('win');
+    $('resultBox').classList.add('lose');
+    $('resultIcon').textContent = '💀';
+    $('resultTitle').textContent = 'Поражение';
+    $('resultSub').textContent = 'Ваш флот уничтожен.';
+    S.phase = 'over';
+    setTimeout(()=>showScreen('screenResult'), 600);
+    return;
+  }
+
+  if(cell.ship === null) {
+    // ИИ промахнулся — ход переходит игроку
+    S.myTurn = true;
+    updateStatusText();
+    updateTitles();
+  } else {
+    // ИИ попал — ход остается у ИИ
+    setTimeout(aiTurn, 600);
+  }
+}
+
+/* ================= ОБЩЕЕ ================= */
 function updateStatusText(){
   const el = $('turnIndicator');
   if(S.phase === 'over'){ el.textContent = 'Игра окончена'; return; }
   if(S.myTurn){ el.textContent = 'Ваш ход'; el.classList.remove('enemy'); }
-  else { el.textContent = 'Ход соперника…'; el.classList.add('enemy'); }
+  else { el.textContent = 'Ход противника…'; el.classList.add('enemy'); }
 }
 function updateTitles(){
   $('titleMyBoard').classList.toggle('active-turn', !S.myTurn);
