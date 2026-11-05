@@ -47,7 +47,8 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'create') {
       const code = genRoomCode();
-      rooms.set(code, { players: [ws, null], ready: [false, false], turn: 0, gameMode: msg.gameMode || 'classic' });
+      // rematchReq: [false, false] — запросы на реванш от каждого игрока
+      rooms.set(code, { players: [ws, null], ready: [false, false], turn: 0, gameMode: msg.gameMode || 'classic', rematchReq: [false, false] });
       ws.roomCode = code;
       ws.slot = 0;
       send(ws, { type: 'created', roomId: code, slot: 0, gameMode: msg.gameMode });
@@ -74,6 +75,23 @@ wss.on('connection', (ws) => {
     if (!room) return;
     const opp = room.players[1 - ws.slot];
     if (!opp) return;
+
+    // Обработка реванша
+    if (msg.type === 'rematch') {
+      room.rematchReq[ws.slot] = true;
+      if (room.rematchReq[0] && room.rematchReq[1]) {
+        // Оба готовы — сбрасываем состояние комнаты и начинаем заново
+        room.ready = [false, false];
+        room.turn = 0;
+        room.rematchReq = [false, false];
+        send(room.players[0], { type: 'rematch-start' });
+        send(room.players[1], { type: 'rematch-start' });
+      } else {
+        // Сообщаем второму игроку, что первый хочет реванш
+        send(opp, { type: 'opponent-rematch' });
+      }
+      return;
+    }
 
     if (msg.type === 'fleet-ready') {
       room.ready[ws.slot] = true;
