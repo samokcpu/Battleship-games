@@ -840,6 +840,7 @@ function handleShotResult(r,c,result){
     cell.sunk = true; 
     S.enemySunk++; 
     
+    // Ищем все клетки потопленного корабля
     let shipCells = [{r, c}];
     const queue = [{r, c}];
     const visited = new Set();
@@ -861,6 +862,7 @@ function handleShotResult(r,c,result){
       }
     }
 
+    // Закрашиваем вокруг
     for (let shipCell of shipCells) {
       for (let dr = -1; dr <= 1; dr++) {
         for (let dc = -1; dc <= 1; dc++) {
@@ -902,6 +904,7 @@ function handleShotResult(r,c,result){
   updateTitles();
 }
 
+// ================== УМНЫЙ ИИ ==================
 function aiTurn(){
   if(S.phase !== 'game' || S.myTurn) return;
 
@@ -990,13 +993,17 @@ function aiTurn(){
       }
     }
   } else {
+    // ИИ промахнулся — сбрасываем очередь
     S.aiHuntQueue = []; 
   }
 
   renderMyBoard();
   updateScoreText();
 
-  if(S.mySunk >= S.totalShips){
+  // Проверка на проигрыш (по реальному полю, а не по счетчику)
+  let aliveShips = 0;
+  S.myShips.forEach(s => { if(!s.sunk) aliveShips++; });
+  if(aliveShips === 0){
     $('resultBox').classList.remove('win');
     $('resultBox').classList.add('lose');
     $('resultIcon').textContent = '💀';
@@ -1027,8 +1034,11 @@ function updateTitles(){
   $('titleEnemyBoard').classList.toggle('active-turn', S.myTurn);
 }
 function updateScoreText(){
-  $('scoreEnemy').textContent = S.enemySunk + '/' + S.totalShips;
-  $('scorePlayer').textContent = S.mySunk + '/' + S.totalShips;
+  // Счетчик показывает реальное количество потопленных кораблей
+  let sunkMe = S.myShips.filter(s=>s.sunk).length;
+  let sunkEnemy = S.mode === 'ai' ? S.aiShips.filter(s=>s.sunk).length : S.enemySunk;
+  $('scoreEnemy').textContent = sunkEnemy + '/' + S.totalShips;
+  $('scorePlayer').textContent = sunkMe + '/' + S.totalShips;
 }
 
 $('btnRematch').addEventListener('click', ()=>{
