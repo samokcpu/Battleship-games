@@ -47,10 +47,10 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'create') {
       const code = genRoomCode();
-      rooms.set(code, { players: [ws, null], ready: [false, false], turn: 0 });
+      rooms.set(code, { players: [ws, null], ready: [false, false], turn: 0, gameMode: msg.gameMode || 'classic' });
       ws.roomCode = code;
       ws.slot = 0;
-      send(ws, { type: 'created', roomId: code, slot: 0 });
+      send(ws, { type: 'created', roomId: code, slot: 0, gameMode: msg.gameMode });
       return;
     }
 
@@ -64,7 +64,7 @@ wss.on('connection', (ws) => {
       ws.roomCode = code;
       ws.slot = 1;
       
-      send(ws, { type: 'joined', roomId: code, slot: 1 });
+      send(ws, { type: 'joined', roomId: code, slot: 1, gameMode: room.gameMode });
       send(room.players[0], { type: 'opponent-joined' });
       send(room.players[1], { type: 'opponent-joined' }); 
       return;
@@ -95,18 +95,12 @@ wss.on('connection', (ws) => {
     }
 
     if (msg.type === 'shot-result') {
-      // Если промах — меняем ход на другого
       if (msg.result === 'miss') {
         room.turn = 1 - room.turn;
       }
-      
-      // Отправляем результат тому, кто стрелял
       send(opp, msg);
-      
-      // ЖЕЛЕЗНО рассылаем обновление хода ОБОИМ игрокам
       send(room.players[0], { type: 'turn-update', yourTurn: room.turn === 0 });
       send(room.players[1], { type: 'turn-update', yourTurn: room.turn === 1 });
-      
       return;
     }
   });
