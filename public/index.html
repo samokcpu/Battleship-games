@@ -79,6 +79,8 @@
         transition:background .15s,transform .1s;position:relative;overflow:hidden}
   .cell:hover:not(.shot):not(.disabled){background:var(--bg-cell-hover)}
   .cell.shot,.cell.disabled{cursor:default;pointer-events:none}
+  
+  /* ===== КОРАБЛИ ===== */
   .cell.ship{background:linear-gradient(160deg,#5ab4d4,#2d6f8a);border-color:#6bc4e0}
   .cell.ship::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
     width:42%;height:42%;border-radius:50%;
@@ -87,16 +89,38 @@
   .cell.ship.ship-h.ship-end{border-top-right-radius:50% 30%;border-bottom-right-radius:50% 30%}
   .cell.ship.ship-v.ship-start{border-top-left-radius:30% 50%;border-top-right-radius:30% 50%}
   .cell.ship.ship-v.ship-end{border-bottom-left-radius:30% 50%;border-bottom-right-radius:30% 50%}
+  
+  /* Однопалубный (катер) */
   .cell.ship.ship-single{border-radius:50%;
     background:radial-gradient(circle at 35% 30%,#b8eefc,#5ab4d4 55%,#2d6f8a)}
-  .cell.hit{background:linear-gradient(160deg,#ff6b5b,#a8281c);border-color:#ff8a7a}
+
+  /* ===== ПОПАДАНИЕ ===== */
+  .cell.hit{background:linear-gradient(160deg,#ff6b5b,#a8281c) !important;border-color:#ff8a7a !important}
+  .cell.hit.ship::before{background:radial-gradient(circle at 40% 35%,#ffd0c0,#ff6b5b 60%,#a8281c) !important}
+  /* Однопалубный при попадании */
+  .cell.hit.ship.ship-single{
+    background:radial-gradient(circle at 35% 30%,#ffb0a0,#e74c3c 55%,#a8281c) !important;
+    border-radius:50% !important;
+  }
+
+  /* ===== ПОТОПЛЕН ===== */
+  .cell.sunk{background:linear-gradient(160deg,#6b2a2a,#3d0e0e) !important;border-color:#ff4444 !important}
+  .cell.sunk.ship::before{background:radial-gradient(circle at 40% 35%,#c97a6a,#5c1a1a 70%,#2a0606) !important}
+  /* Однопалубный при потоплении */
+  .cell.sunk.ship.ship-single{
+    background:radial-gradient(circle at 35% 30%,#a85a4a,#5c1a1a 55%,#2a0606) !important;
+    border-radius:50% !important;
+  }
+
   .cell.hit::after,.cell.sunk::after{content:'✕';position:absolute;top:50%;left:50%;
     transform:translate(-50%,-50%);font-size:1.4rem;font-weight:900;color:#fff;
     text-shadow:0 0 8px rgba(255,0,0,.9);z-index:2}
-  .cell.sunk{background:linear-gradient(160deg,#6b2a2a,#3d0e0e);border-color:#ff4444}
+  
+  /* ===== ПРОМАХ ===== */
   .cell.miss{background:var(--miss);border-color:#5a7b92}
   .cell.miss::after{content:'';position:absolute;top:50%;left:50%;width:10px;height:10px;
     background:#9bb8cc;border-radius:50%;transform:translate(-50%,-50%)}
+  
   .status-bar{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;align-items:center;
               background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;
               padding:12px 22px;margin:14px 0;font-size:.92rem;box-shadow:var(--shadow)}
