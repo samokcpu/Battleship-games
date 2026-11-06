@@ -57,7 +57,7 @@ wss.on('connection', (ws) => {
     if (msg.type === 'join') {
       const code = String(msg.roomId || '').trim();
       const room = rooms.get(code);
-      if (!room) { send(ws, { type: 'error', message: 'Комната не найдена: ' + code }); return; }
+      if (!room) { send(ws, { type: 'error', message: 'Комната не найдена' }); return; }
       if (room.players[1]) { send(ws, { type: 'error', message: 'Комната уже заполнена' }); return; }
       
       room.players[1] = ws;
@@ -66,10 +66,11 @@ wss.on('connection', (ws) => {
       
       send(ws, { type: 'joined', roomId: code, slot: 1, gameMode: room.gameMode });
       
-      // Для шахмат сразу начинаем игру (белые начинают первыми)
       if (room.gameMode === 'chess') {
-        send(room.players[0], { type: 'start-chess', yourTurn: true, color: 'w' });
-        send(room.players[1], { type: 'start-chess', yourTurn: false, color: 'b' });
+        // Рандомный выбор цвета
+        const firstIsWhite = Math.random() < 0.5;
+        send(room.players[0], { type: 'start-chess', yourTurn: firstIsWhite, color: firstIsWhite ? 'w' : 'b' });
+        send(room.players[1], { type: 'start-chess', yourTurn: !firstIsWhite, color: firstIsWhite ? 'b' : 'w' });
       } else {
         send(room.players[0], { type: 'opponent-joined' });
         send(room.players[1], { type: 'opponent-joined' }); 
@@ -82,29 +83,20 @@ wss.on('connection', (ws) => {
     const opp = room.players[1 - ws.slot];
     if (!opp) return;
 
-    // Логика пересылки ходов для шахмат
     if (msg.type === 'chess-move') {
-      if (room.gameMode !== 'chess') return;
-      
-      // Меняем ход
-      room.turn = 1 - room.turn;
-      
-      // Пересылаем ход сопернику
+      // Просто пересылаем ход сопернику, не меняем room.turn (клиенты сами знают чей ход)
       send(opp, { 
         type: 'opponent-move', 
         from: msg.from, 
         to: msg.to, 
-        promotion: msg.promotion,
-        checkmate: msg.checkmate 
+        promotion: msg.promotion
       });
-      
-      // Отправляем обновление хода
-      send(room.players[0], { type: 'turn-update', yourTurn: room.turn === 0 });
-      send(room.players[1], { type: 'turn-update', yourTurn: room.turn === 1 });
       return;
     }
 
-    // Логика Морского боя
+    if (msg.type === 'chess-draw-offer') { send(opp, { type: 'chess-draw-offer' }); return; }
+    if (msg.type === 'chess-draw-accept') { send(opp, { type: 'chess-draw-accept' }); return; }
+
     if (msg.type === 'fleet-ready') {
       room.ready = room.ready || [false, false];
       room.ready[ws.slot] = true;
