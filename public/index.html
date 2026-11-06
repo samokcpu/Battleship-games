@@ -271,7 +271,8 @@
     <div class="chess-board-container" id="chessBoard"></div>
     <div class="chess-status" id="chessStatus">Ваш ход (Белые)</div>
     <div class="chess-controls-row">
-      <button class="btn btn-small" onclick="showScreen('screenChessLobby')">← Сдаться</button>
+      <button class="btn btn-small" id="btnChessResign">🏳️ Сдаться</button>
+      <button class="btn btn-small" id="btnChessDraw">🤝 Ничья</button>
     </div>
   </div>
 </div>
@@ -551,9 +552,21 @@ function handleMessage(msg){
     }
     return;
   }
+  if(msg.type === 'chess-draw-offer') {
+    if(confirm('Соперник предлагает ничью. Согласны?')) {
+      wsSend({type:'chess-draw-accept'});
+      endChessGame('Ничья по согласию', 'draw');
+    } else {
+      toast('Вы отклонили ничью');
+    }
+    return;
+  }
+  if(msg.type === 'chess-draw-accept') {
+    endChessGame('Ничья по согласию', 'draw');
+    return;
+  }
   if(msg.type === 'opponent-left') {
-    toast('Соперник сдался или вышел');
-    if(S.chessMatchActive) endChessGame('Соперник сдался. Вы победили!');
+    if(S.chessMatchActive) endChessGame('Соперник сдался. Вы победили!', 'win');
     else showScreen('screenMainMenu'); 
     return;
   }
@@ -1059,7 +1072,27 @@ window.addEventListener('keydown', (e) => {
 $('btnCreateChess').addEventListener('click', ()=>{ $('chessStatusCreate').textContent = 'Создаём…'; wsSend({type:'create', gameMode: 'chess'}); });
 $('btnJoinChess').addEventListener('click', ()=>{ const code = $('inputChessRoom').value.trim(); if(!/^\d{1,4}$/.test(code)){ $('chessStatusJoin').textContent = 'Введите код'; return; } wsSend({type:'join', roomId: code}); });
 document.querySelectorAll('.btn-chess-ai').forEach(btn => {
-  btn.addEventListener('click', () => { S.chessPlayerColor = 'w'; startChessGame(true); });
+  btn.addEventListener('click', () => {
+    // Рандом за бота
+    S.chessPlayerColor = Math.random() < 0.5 ? 'w' : 'b';
+    startChessGame(true);
+  });
+});
+
+$('btnChessDraw').addEventListener('click', () => {
+  if(!S.chessIsBot) {
+    wsSend({type:'chess-draw-offer'});
+    toast('Вы предложили ничью. Ждём ответа...');
+  } else {
+    if(confirm('Согласны на ничью с ботом?')) endChessGame('Ничья с ботом', 'draw');
+  }
+});
+
+$('btnChessResign').addEventListener('click', () => {
+  if(confirm('Вы уверены, что хотите сдаться?')) {
+    if(!S.chessIsBot) wsSend({type:'chess-resign'});
+    endChessGame('Вы сдались', 'lose');
+  }
 });
 
 function startChessGame(isBot) {
@@ -1071,12 +1104,25 @@ function startChessGame(isBot) {
   showScreen('screenChessGame');
   renderChessBoard();
   updateChessStatus();
+  
+  if (S.chessIsBot && S.chessPlayerColor === 'b') {
+    setTimeout(makeBotMove, 500);
+  }
 }
 
-function endChessGame(reason) {
+function endChessGame(reason, result) {
   S.chessMatchActive = false;
-  alert(reason);
-  showScreen('screenChessLobby');
+  $('resultBox').classList.remove('win', 'lose');
+  if (result === 'win') $('resultBox').classList.add('win');
+  if (result === 'lose') $('resultBox').classList.add('lose');
+  
+  $('resultIcon').textContent = result === 'win' ? '🏆' : (result === 'lose' ? '💀' : '🤝');
+  $('resultTitle').textContent = result === 'win' ? 'Победа!' : (result === 'lose' ? 'Поражение' : 'Ничья');
+  $('resultSub').textContent = reason;
+  
+  showScreen('screenResult');
+  if(S.mode === 'online') $('btnRematch').style.display = 'block';
+  else $('btnRematch').style.display = 'none'; // Реванш для бота пока убран для простоты
 }
 
 function renderChessBoard() {
@@ -1127,7 +1173,11 @@ function onChessSquareClick(r, c) {
   const currentTurn = S.chessGame.turn();
   if (currentTurn !== S.chessPlayerColor) return; 
   
-  const square = S.chessGame.SQUARES[r * 8 + c];
+  const isFlipped = S.chessPlayerColor === 'b';
+  const realR = isFlipped ? 7 - r : r;
+  const realC = isFlipped ? 7 - c : c;
+  
+  const square = S.chessGame.SQUARES[realR * 8 + realC];
   const piece = S.chessGame.get(square);
   
   if (S.chessSelected) {
@@ -1148,7 +1198,7 @@ function onChessSquareClick(r, c) {
     } else { S.chessSelected = null; }
   }
   
-  if (piece && piece.color === S.chessPlayerColor) { S.chessSelected = { r, c }; }
+  if (piece && piece.color === S.chessPlayerColor) { S.chessSelected = { r: realR, c: realC }; }
   renderChessBoard();
 }
 
@@ -1165,10 +1215,14 @@ function makeBotMove() {
 
 function checkChessGameOver() {
   if (S.chessGame.game_over()) {
-    S.chessMatchActive = false;
-    let msg = 'Ничья';
-    if(S.chessGame.in_checkmate()) msg = 'Мат! Игра окончена.';
-    setTimeout(() => { alert(msg); showScreen('screenChessLobby'); }, 100);
+    if (S.chessGame.in_checkmate()) {
+      const winner = S.chessGame.turn() === 'w' ? 'Черные' : 'Белые';
+      const myColor = S.chessPlayerColor === 'w' ? 'Белые' : 'Черные';
+      if (winner === myColor) endChessGame('Вы поставили мат!', 'win');
+      else endChessGame('Вам поставили мат!', 'lose');
+    } else {
+      endChessGame('Ничья на доске', 'draw');
+    }
   }
 }
 
