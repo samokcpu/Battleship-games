@@ -182,7 +182,6 @@
     cursor: pointer; user-select: none; position: relative;
   }
   
-  /* SVG иконки фигур */
   .chess-square svg { width: 85%; height: 85%; pointer-events: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2)); }
   
   .chess-square.light { background: var(--chess-light); }
@@ -190,7 +189,6 @@
   .chess-square.selected { background: rgba(255, 255, 0, 0.5) !important; }
   .chess-square.last-move { background: rgba(255, 255, 0, 0.4) !important; }
   
-  /* Точки для ходов */
   .chess-square.valid-move::after {
     content: ''; width: 30%; height: 30%; background: rgba(0,0,0,0.15); border-radius: 50%;
     position: absolute; pointer-events: none;
@@ -617,7 +615,6 @@ function handleMessage(msg){
 
     const move = S.chessGame.move({ from: msg.from, to: msg.to, promotion: 'q' });
     if(move) { 
-      S.chessMoveStarted = true; 
       updateChessHistoryUI();
       renderChessBoard(); 
       updateChessStatus(); 
