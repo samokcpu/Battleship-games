@@ -534,13 +534,13 @@ const S = {
   chessPlayerColor: 'w', 
   chessIsBot: false,
   chessSelected: null,
-  chessHistoryView: -1, // -1 текущая, иначе индекс
+  chessHistoryView: -1,
   chessTimerInterval: null,
   chessTimeLimit: 300,
   chessTimeW: 300,
   chessTimeB: 300,
   chessMatchActive: false,
-  chessMoveStarted: false // Таймер стартует только после первого хода
+  chessMoveStarted: false 
 };
 
 /* ================= ФИГУРЫ (SVG) ================= */
@@ -617,6 +617,7 @@ function handleMessage(msg){
 
     const move = S.chessGame.move({ from: msg.from, to: msg.to, promotion: 'q' });
     if(move) { 
+      S.chessMoveStarted = true; 
       updateChessHistoryUI();
       renderChessBoard(); 
       updateChessStatus(); 
@@ -1184,7 +1185,7 @@ $('btnChessRedo').addEventListener('click', () => {
   if(S.chessHistoryView === -1) return;
   
   if(S.chessHistoryView < history.length) S.chessHistoryView++;
-  if(S.chessHistoryView === history.length) S.chessHistoryView = -1; // конец истории = текущая игра
+  if(S.chessHistoryView === history.length) S.chessHistoryView = -1;
   
   renderChessBoard();
   $('btnChessReturn').style.display = S.chessHistoryView !== -1 ? 'block' : 'none';
@@ -1202,7 +1203,7 @@ function startChessGame(isBot) {
   S.chessSelected = null;
   S.chessHistoryView = -1;
   S.chessMatchActive = true;
-  S.chessMoveStarted = false;
+  S.chessMoveStarted = false; // Сброс при старте
   
   S.chessTimeLimit = selectedTimeLimit;
   S.chessTimeW = selectedTimeLimit;
@@ -1229,6 +1230,7 @@ function formatTime(secs) {
 }
 
 function tickChessClock() {
+  // Таймер не тикает до первого хода
   if(!S.chessMatchActive || S.chessGame.game_over() || !S.chessMoveStarted) return;
   
   if(S.chessGame.turn() === 'w') {
