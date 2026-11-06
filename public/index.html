@@ -17,7 +17,7 @@
     --s-bg:#0f2438; --s-cell:#1a3a52; --s-cell-fixed:#122d42;
     --s-border:#1e4d6b; --s-border-thick:#00b4d8;
     --s-text:#c8e6f5; --s-text-fixed:#7ba7c4; --s-highlight:#2a5a7a;
-    --s-error:#e74c3c; --s-success:#2ecc71;
+    --s-error:#e74c3c; --s-success:#2ecc71; --s-locked:#4a6b82;
   }
   *{margin:0;padding:0;box-sizing:border-box}
   body{
@@ -174,6 +174,9 @@
 
   /* ================= СУДОКУ ================= */
   .sudoku-header { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 450px; margin-bottom: 20px; }
+  .sudoku-stats { display: flex; gap: 15px; align-items: center; }
+  .error-counter { font-size: 1.1rem; font-weight: bold; color: var(--hit); background: rgba(231,76,60,0.1); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(231,76,60,0.3); }
+  
   .sudoku-grid { 
     display: grid; grid-template-columns: repeat(9, 1fr); 
     gap: 1px; background: var(--s-border-thick); 
@@ -184,10 +187,15 @@
   .s-cell {
     background: var(--s-cell); display: flex; align-items: center; justify-content: center;
     font-size: 1.6rem; font-weight: 600; color: var(--accent); cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition: background 0.15s, color 0.15s, font-weight 0.15s;
   }
   .s-cell:hover { background: var(--s-highlight); }
-  .s-cell.fixed { color: var(--s-text-fixed); background: var(--s-cell-fixed); font-weight: 400; }
+  .s-cell.fixed { color: var(--s-text-fixed); background: var(--s-cell-fixed); font-weight: 400; cursor: default;}
+  
+  /* Заблокированная правильная цифра */
+  .s-cell.locked { color: var(--s-locked); font-weight: 700; cursor: default; }
+  .s-cell.locked:hover { background: var(--s-cell); }
+  
   .s-cell.selected { background: var(--s-highlight) !important; box-shadow: inset 0 0 0 3px var(--accent); z-index: 1;}
   .s-cell.highlighted { background: rgba(42, 90, 122, 0.6); }
   .s-cell.same-number { background: rgba(0, 180, 216, 0.2); font-weight: 900;}
@@ -226,14 +234,11 @@
   <h2>Выберите во что хотите сыграть</h2>
   
   <div class="menu-container">
-    <!-- Карточка Морской бой -->
     <div class="game-card" onclick="showScreen('screenLobby')">
       <div class="game-icon">⚓</div>
       <div class="game-title">Морской бой</div>
       <div class="game-subtitle">Классика, Онлайн, ИИ</div>
     </div>
-
-    <!-- Карточка Судоку -->
     <div class="game-card sudoku" onclick="showScreen('screenSudokuSelect')">
       <div class="game-icon">🧩</div>
       <div class="game-title">Судоку</div>
@@ -360,7 +365,10 @@
 <div class="screen" id="screenSudokuGame">
   <div class="sudoku-header">
     <button class="btn btn-small" onclick="showScreen('screenSudokuSelect')">← Назад</button>
-    <div style="font-size: 1.3rem; font-weight: bold; color: var(--accent); text-shadow: 0 0 10px rgba(0,180,216,.4);" id="sudokuTimer">00:00</div>
+    <div class="sudoku-stats">
+      <div class="error-counter" id="sudokuErrorCount">Ошибки: 0/4</div>
+      <div style="font-size: 1.2rem; font-weight: bold; color: var(--accent);" id="sudokuTimer">00:00</div>
+    </div>
   </div>
   
   <div class="sudoku-grid" id="sudokuGrid"></div>
@@ -433,8 +441,8 @@ const S = {
   orientation: 'h', placedCount: [], activeFleetIdx: 0,
   mySunk: 0, enemySunk: 0, aiHuntQueue: [], aiHits: [],
   
-  sudokuSolution: [], sudokuGridData: [], sudokuFixed: [],
-  sudokuSelected: null, sudokuTimerId: null, sudokuSeconds: 0
+  sudokuSolution: [], sudokuGridData: [], sudokuFixed: [], sudokuLocked: [],
+  sudokuSelected: null, sudokuTimerId: null, sudokuSeconds: 0, sudokuErrors: 0
 };
 
 /* ======================================================================
@@ -865,6 +873,10 @@ window.startSudoku = function(diff) {
   fillBoard(S.sudokuSolution);
   S.sudokuGridData = S.sudokuSolution.map(row => [...row]);
   S.sudokuFixed = Array(9).fill().map(() => Array(9).fill(false));
+  S.sudokuLocked = Array(9).fill().map(() => Array(9).fill(false));
+  S.sudokuErrors = 0;
+  $('sudokuErrorCount').textContent = 'Ошибки: 0/4';
+  $('sudokuErrorCount').style.color = 'var(--hit)';
   
   let cellsToRemove = 35;
   if (diff === 'amateur') cellsToRemove = 45;
@@ -902,7 +914,13 @@ window.renderSudoku = function() {
       const cell = document.createElement('div'); cell.className = 's-cell'; cell.dataset.r = r; cell.dataset.c = c;
       if (r === 2 || r === 5) cell.classList.add('box-bottom');
       if (c === 2 || c === 5) cell.classList.add('box-right');
-      if (S.sudokuFixed[r][c]) cell.classList.add('fixed');
+      
+      if (S.sudokuFixed[r][c]) {
+        cell.classList.add('fixed');
+      } else if (S.sudokuLocked[r][c]) {
+        cell.classList.add('locked'); // Правильно введенная цифра
+      }
+      
       if (S.sudokuGridData[r][c] !== 0) cell.textContent = S.sudokuGridData[r][c];
       
       if (S.sudokuSelected) {
@@ -915,24 +933,66 @@ window.renderSudoku = function() {
       
       if (S.sudokuGridData[r][c] !== 0 && S.sudokuGridData[r][c] !== S.sudokuSolution[r][c]) cell.classList.add('error');
       
-      cell.addEventListener('click', () => { S.sudokuSelected = { r, c }; renderSudoku(); });
+      cell.addEventListener('click', () => { 
+        if(!S.sudokuFixed[r][c] && !S.sudokuLocked[r][c]) {
+          S.sudokuSelected = { r, c }; 
+          renderSudoku(); 
+        }
+      });
       grid.appendChild(cell);
     }
   }
 }
 
 window.sudokuInput = function(num) {
-  if (!S.sudokuSelected) return;
+  if (!S.sudokuSelected || S.sudokuErrors >= 4) return;
   const { r, c } = S.sudokuSelected;
-  if (S.sudokuFixed[r][c]) return;
-  S.sudokuGridData[r][c] = num; renderSudoku(); checkSudokuWin();
+  if (S.sudokuFixed[r][c] || S.sudokuLocked[r][c]) return;
+  
+  // Если пользователь стирает цифру
+  if (num === 0) {
+    S.sudokuGridData[r][c] = 0;
+    renderSudoku();
+    return;
+  }
+
+  // Если введена правильная цифра
+  if (num === S.sudokuSolution[r][c]) {
+    S.sudokuGridData[r][c] = num;
+    S.sudokuLocked[r][c] = true; // Блокируем её
+    S.sudokuSelected = null;
+    renderSudoku();
+    checkSudokuWin();
+  } else {
+    // Ошибка
+    S.sudokuGridData[r][c] = num;
+    S.sudokuErrors++;
+    $('sudokuErrorCount').textContent = `Ошибки: ${S.sudokuErrors}/4`;
+    
+    renderSudoku();
+    
+    if (S.sudokuErrors >= 4) {
+      clearInterval(S.sudokuTimerId);
+      $('sudokuErrorCount').style.color = '#fff';
+      $('sudokuErrorCount').style.background = 'var(--hit)';
+      setTimeout(() => {
+        alert('💀 Вы допустили 4 ошибки. Игра окончена!');
+        showScreen('screenSudokuSelect');
+      }, 100);
+    }
+  }
 }
 
 window.sudokuHint = function() {
   if (!S.sudokuSelected) { toast('Выберите клетку'); return; }
   const { r, c } = S.sudokuSelected;
-  if (S.sudokuFixed[r][c]) { toast('Эта клетка изначально заполнена'); return; }
-  S.sudokuGridData[r][c] = S.sudokuSolution[r][c]; renderSudoku(); checkSudokuWin();
+  if (S.sudokuFixed[r][c] || S.sudokuLocked[r][c]) { toast('Эта клетка уже заполнена'); return; }
+  
+  S.sudokuGridData[r][c] = S.sudokuSolution[r][c];
+  S.sudokuLocked[r][c] = true;
+  S.sudokuSelected = null;
+  renderSudoku(); 
+  checkSudokuWin();
 }
 
 function checkSudokuWin() {
