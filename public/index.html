@@ -169,8 +169,8 @@
   .chess-name { font-weight: bold; font-size: 1rem; }
   .chess-captured { display: flex; flex-wrap: wrap; gap: 0px; font-size: 1.2rem; color: var(--text-dim); align-items: center; min-height: 24px; line-height: 1;}
   
-  .chess-timer { font-size: 1.2rem; font-weight: bold; background: var(--bg-cell); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); font-variant-numeric: tabular-nums; }
-  .chess-timer.active { color: var(--accent); border-color: var(--accent); }
+  /* Временное скрытие таймеров, как просили */
+  .chess-timer { display: none !important; }
 
   .chess-board-container {
     position: relative; width: 100%; aspect-ratio: 1;
@@ -255,15 +255,6 @@
     <button class="btn btn-small" onclick="showScreen('screenMainMenu')">← В меню</button>
   </div>
   <h1>♟️ Шахматы</h1>
-  
-  <div class="panel">
-    <h3>Выбор времени</h3>
-    <div class="btn-row" style="margin-bottom:0">
-      <button class="btn btn-small btn-time" data-time="180">3 мин</button>
-      <button class="btn btn-small btn-time btn-accent" data-time="300">5 мин</button>
-      <button class="btn btn-small btn-time" data-time="600">10 мин</button>
-    </div>
-  </div>
 
   <div class="panel">
     <h3>Игра с компьютером</h3>
@@ -487,10 +478,6 @@ window.showScreen = function(id){
     clearInterval(S.sudokuTimerId);
     S.sudokuTimerId = null;
   }
-  if (id !== 'screenChessGame' && S.chessTimerInterval) {
-    clearInterval(S.chessTimerInterval);
-    S.chessTimerInterval = null;
-  }
 }
 
 function toast(msg){
@@ -533,12 +520,7 @@ const S = {
   chessIsBot: false,
   chessSelected: null,
   chessHistoryView: -1,
-  chessTimerInterval: null,
-  chessTimeLimit: 300,
-  chessTimeW: 300,
-  chessTimeB: 300,
-  chessMatchActive: false,
-  chessMoveStarted: false 
+  chessMatchActive: false
 };
 
 /* ================= ФИГУРЫ (SVG) ================= */
@@ -618,7 +600,6 @@ function handleMessage(msg){
       updateChessHistoryUI();
       renderChessBoard(); 
       updateChessStatus(); 
-      updateChessClocks();
       checkChessGameOver();
     }
     return;
@@ -1141,15 +1122,6 @@ window.addEventListener('keydown', (e) => {
 
 
 /* ================= ШАХМАТЫ ================= */
-let selectedTimeLimit = 300;
-document.querySelectorAll('.btn-time').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.btn-time').forEach(b => b.classList.remove('btn-accent'));
-    btn.classList.add('btn-accent');
-    selectedTimeLimit = parseInt(btn.dataset.time);
-  });
-});
-
 $('btnCreateChess').addEventListener('click', ()=>{ $('chessStatusCreate').textContent = 'Создаём…'; wsSend({type:'create', gameMode: 'chess'}); });
 $('btnJoinChess').addEventListener('click', ()=>{ const code = $('inputChessRoom').value.trim(); if(!/^\d{1,4}$/.test(code)){ $('chessStatusJoin').textContent = 'Введите код'; return; } wsSend({type:'join', roomId: code}); });
 document.querySelectorAll('.btn-chess-ai').forEach(btn => {
@@ -1200,63 +1172,16 @@ function startChessGame(isBot) {
   S.chessSelected = null;
   S.chessHistoryView = -1;
   S.chessMatchActive = true;
-  S.chessMoveStarted = false; // Сброс при старте
-  
-  S.chessTimeLimit = selectedTimeLimit;
-  S.chessTimeW = selectedTimeLimit;
-  S.chessTimeB = selectedTimeLimit;
-  
-  $('chessTimerPlayer').textContent = formatTime(S.chessTimeLimit);
-  $('chessTimerOpponent').textContent = formatTime(S.chessTimeLimit);
   
   showScreen('screenChessGame');
-  updateChessClocks();
   updateChessHistoryUI();
   renderChessBoard();
   updateChessStatus();
   $('btnChessReturn').style.display = 'none';
-  
-  if(S.chessTimerInterval) clearInterval(S.chessTimerInterval);
-  S.chessTimerInterval = setInterval(tickChessClock, 1000);
-}
-
-function formatTime(secs) {
-  const m = Math.floor(secs / 60).toString().padStart(2, '0');
-  const s = (secs % 60).toString().padStart(2, '0');
-  return `${m}:${s}`;
-}
-
-function tickChessClock() {
-  // Таймер не тикает до первого хода
-  if(!S.chessMatchActive || S.chessGame.game_over() || !S.chessMoveStarted) return;
-  
-  if(S.chessGame.turn() === 'w') {
-    S.chessTimeW--;
-    if(S.chessTimeW <= 0) { S.chessTimeW = 0; endChessGame('Время вышло! Победа черных'); }
-  } else {
-    S.chessTimeB--;
-    if(S.chessTimeB <= 0) { S.chessTimeB = 0; endChessGame('Время вышло! Победа белых'); }
-  }
-  updateChessClocks();
-}
-
-function updateChessClocks() {
-  if(S.chessPlayerColor === 'w') {
-    $('chessTimerPlayer').textContent = formatTime(S.chessTimeW);
-    $('chessTimerOpponent').textContent = formatTime(S.chessTimeB);
-    $('chessTimerPlayer').classList.toggle('active', S.chessGame.turn() === 'w' && S.chessMoveStarted);
-    $('chessTimerOpponent').classList.toggle('active', S.chessGame.turn() === 'b' && S.chessMoveStarted);
-  } else {
-    $('chessTimerPlayer').textContent = formatTime(S.chessTimeB);
-    $('chessTimerOpponent').textContent = formatTime(S.chessTimeW);
-    $('chessTimerPlayer').classList.toggle('active', S.chessGame.turn() === 'b' && S.chessMoveStarted);
-    $('chessTimerOpponent').classList.toggle('active', S.chessGame.turn() === 'w' && S.chessMoveStarted);
-  }
 }
 
 function endChessGame(reason) {
   S.chessMatchActive = false;
-  clearInterval(S.chessTimerInterval);
   alert(reason);
   showScreen('screenChessLobby');
 }
@@ -1288,17 +1213,23 @@ function renderChessBoard() {
     lastMove = S.chessHistoryView > 0 ? h[S.chessHistoryView-1] : null;
   }
 
+  // Если мы играем за черных, доска переворачивается
   const isFlipped = S.chessPlayerColor === 'b';
   
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
+      // displayR и displayC - это визуальные координаты на экране
       const displayR = isFlipped ? 7 - r : r;
       const displayC = isFlipped ? 7 - c : c;
+      
+      // А это реальные координаты на доске
       const piece = boardState[displayR][displayC];
       const squareEl = document.createElement('div');
       
       const isLight = (displayR + displayC) % 2 === 0;
       squareEl.className = `chess-square ${isLight ? 'light' : 'dark'}`;
+      
+      // Важно: передаем РЕАЛЬНЫЕ координаты для обработки клика
       squareEl.dataset.r = displayR;
       squareEl.dataset.c = displayC;
       
@@ -1374,12 +1305,10 @@ function onChessSquareClick(r, c) {
     const move = S.chessGame.move({ from: fromSquare, to: square, promotion: 'q' });
     if (move) {
       S.chessSelected = null;
-      S.chessMoveStarted = true; // Таймер стартует после первого хода
       
       updateChessHistoryUI();
       renderChessBoard();
       updateChessStatus();
-      updateChessClocks();
       checkChessGameOver();
       
       if (!S.chessIsBot) { 
@@ -1405,14 +1334,12 @@ function makeBotMove() {
   updateChessHistoryUI();
   renderChessBoard();
   updateChessStatus();
-  updateChessClocks();
   checkChessGameOver();
 }
 
 function checkChessGameOver() {
   if (S.chessGame.game_over()) {
     S.chessMatchActive = false;
-    clearInterval(S.chessTimerInterval);
     let msg = 'Ничья';
     if(S.chessGame.in_checkmate()) msg = 'Мат! Игра окончена.';
     setTimeout(() => { alert(msg); showScreen('screenChessLobby'); }, 100);
