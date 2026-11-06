@@ -26,58 +26,107 @@
     color:var(--text);min-height:100vh;display:flex;flex-direction:column;
     align-items:center;justify-content:center;padding:16px;overflow-x:hidden;
   }
-  h1{font-size:clamp(1.3rem,4vw,2rem);letter-spacing:2px;text-transform:uppercase;
-     color:var(--accent);margin-bottom:8px;text-align:center;text-shadow:0 0 20px rgba(0,180,216,.4)}
-  h2{font-size:1rem;color:var(--text-dim);font-weight:400;margin-bottom:16px;text-align:center}
-  .screen{display:none;flex-direction:column;align-items:center;width:100%;max-width:1400px;animation:fadeIn .3s ease}
+  h1{font-size:clamp(1.5rem,5vw,2.5rem);letter-spacing:3px;text-transform:uppercase;
+     color:var(--accent);margin-bottom:8px;text-align:center;text-shadow:0 0 30px rgba(0,180,216,.6); font-weight: 800;}
+  h2{font-size:1rem;color:var(--text-dim);font-weight:400;margin-bottom:24px;text-align:center; letter-spacing: 1px;}
+  .screen{display:none;flex-direction:column;align-items:center;width:100%;max-width:1400px;animation:fadeIn .4s ease}
   .screen.active{display:flex}
-  @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
   
-  .btn{background:var(--btn);color:var(--text);border:1px solid var(--border);border-radius:10px;
-       padding:12px 26px;font-size:.95rem;font-weight:600;cursor:pointer;transition:all .2s;
-       letter-spacing:1px;text-transform:uppercase;text-align:center;text-decoration:none;}
+  .btn{background:var(--btn);color:var(--text);border:1px solid var(--border);border-radius:12px;
+       padding:12px 26px;font-size:.95rem;font-weight:600;cursor:pointer;transition:all .25s cubic-bezier(0.4, 0, 0.2, 1);
+       letter-spacing:1px;text-transform:uppercase;text-align:center;text-decoration:none; position: relative; overflow: hidden;}
   .btn:hover:not(:disabled){background:var(--btn-hover);border-color:var(--accent);
-             box-shadow:0 0 16px rgba(0,180,216,.25);transform:translateY(-1px)}
+             box-shadow:0 0 20px rgba(0,180,216,.4);transform:translateY(-2px)}
   .btn:active:not(:disabled){transform:translateY(1px)}
   .btn:disabled{opacity:.5;cursor:not-allowed}
   .btn-accent{background:linear-gradient(135deg,#0077b6,#00b4d8);border-color:var(--accent)}
-  .btn-accent:hover:not(:disabled){background:linear-gradient(135deg,#0088cc,#00d4f8);box-shadow:0 0 24px rgba(0,180,216,.5)}
+  .btn-accent:hover:not(:disabled){background:linear-gradient(135deg,#0088cc,#00d4f8);box-shadow:0 0 30px rgba(0,180,216,.6)}
   .btn-small{padding:8px 14px;font-size:.8rem}
   .btn-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:12px 0}
   
-  .panel{background:var(--bg-panel);border:1px solid var(--border);border-radius:14px;
-         padding:22px 26px;box-shadow:var(--shadow);max-width:440px;width:100%;margin-bottom:16px}
-  .panel h3{color:var(--accent);margin-bottom:12px;font-size:1rem}
+  .panel{background:var(--bg-panel);border:1px solid var(--border);border-radius:16px;
+         padding:24px 28px;box-shadow:var(--shadow);max-width:440px;width:100%;margin-bottom:16px}
+  .panel h3{color:var(--accent);margin-bottom:16px;font-size:1.05rem; text-transform: uppercase; letter-spacing: 1px;}
   
-  /* ================= МЕНЮ ================= */
-  .menu-btn { font-size: 1.5rem; padding: 30px; width: 100%; display:flex; flex-direction:column; align-items:center; gap:10px;}
-  .menu-icon { font-size: 3rem; }
+  /* ================= НОВОЕ МЕНЮ ================= */
+  .menu-container { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 800px; margin-top: 10px; }
+  
+  .game-card {
+    flex: 1 1 300px; max-width: 380px; height: 320px; border-radius: 24px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer; position: relative; overflow: hidden;
+    background: rgba(15, 36, 56, 0.7);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  
+  .game-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(0, 180, 216, 0.15) 0%, transparent 100%);
+    opacity: 0; transition: opacity 0.3s ease; z-index: 1;
+  }
+  
+  .game-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    border-color: rgba(0, 180, 216, 0.5);
+    box-shadow: 0 15px 40px rgba(0, 180, 216, 0.2), 0 0 20px rgba(0, 180, 216, 0.1) inset;
+  }
+  .game-card:hover::before { opacity: 1; }
+  
+  .game-card.sudoku:hover {
+    border-color: rgba(46, 204, 113, 0.5);
+    box-shadow: 0 15px 40px rgba(46, 204, 113, 0.2), 0 0 20px rgba(46, 204, 113, 0.1) inset;
+  }
+  .game-card.sudoku::before { background: linear-gradient(135deg, rgba(46, 204, 113, 0.15) 0%, transparent 100%); }
+  
+  .game-icon {
+    font-size: 6rem; margin-bottom: 20px; z-index: 2;
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.4));
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  
+  .game-card:hover .game-icon { transform: scale(1.1) rotate(5deg); }
+  .game-card.sudoku:hover .game-icon { transform: scale(1.1) rotate(-5deg); }
+  
+  .game-title {
+    font-size: 1.6rem; font-weight: 900; text-transform: uppercase;
+    letter-spacing: 2px; z-index: 2; text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    color: #fff;
+  }
+  
+  .game-subtitle {
+    font-size: 0.85rem; color: var(--text-dim); margin-top: 8px; z-index: 2;
+    opacity: 0.8; font-weight: 500; letter-spacing: 1px;
+  }
 
   /* ================= МОРСКОЙ БОЙ ================= */
   .field{margin-bottom:12px}
-  .field label{display:block;font-size:.82rem;color:var(--text-dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px}
-  .field input{width:100%;padding:12px 14px;background:var(--bg-cell);border:1px solid var(--border);
-               border-radius:8px;color:var(--text);font-size:1.2rem;font-family:inherit;outline:none;
-               letter-spacing:4px;text-align:center;font-weight:700}
-  .field input:focus{border-color:var(--accent);box-shadow:0 0 10px rgba(0,180,216,.3)}
-  .field select{width:100%;padding:12px 14px;background:var(--bg-cell);border:1px solid var(--border);
-               border-radius:8px;color:var(--text);font-size:1rem;font-family:inherit;outline:none;cursor:pointer;}
+  .field label{display:block;font-size:.82rem;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px}
+  .field input{width:100%;padding:14px;background:var(--bg-cell);border:1px solid var(--border);
+               border-radius:10px;color:var(--text);font-size:1.2rem;font-family:inherit;outline:none;
+               letter-spacing:4px;text-align:center;font-weight:700; transition: border-color 0.2s;}
+  .field input:focus{border-color:var(--accent);box-shadow:0 0 15px rgba(0,180,216,.2)}
+  .field select{width:100%;padding:14px;background:var(--bg-cell);border:1px solid var(--border);
+               border-radius:10px;color:var(--text);font-size:1rem;font-family:inherit;outline:none;cursor:pointer;}
   .code-display{font-size:3rem;font-weight:900;letter-spacing:10px;color:var(--accent);
-                text-align:center;padding:16px;background:var(--bg-cell);border-radius:10px;
+                text-align:center;padding:16px;background:var(--bg-cell);border-radius:12px;
                 border:1px dashed var(--border);margin:10px 0;user-select:all}
   .status{margin-top:10px;font-size:.85rem;color:var(--text-dim);text-align:center;min-height:20px}
   .status.ok{color:var(--valid)} .status.err{color:var(--hit)}
   .conn-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--hit);margin-right:6px;vertical-align:middle}
-  .conn-dot.online{background:var(--valid)}
+  .conn-dot.online{background:var(--valid); box-shadow: 0 0 8px var(--valid);}
   
   .game-container{display:flex;gap:56px;flex-wrap:wrap;justify-content:center;align-items:flex-start;width:100%}
   .board-section{display:flex;flex-direction:column;align-items:center;gap:10px}
   .board-title{font-size:.95rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;
-               color:var(--text-dim);padding:6px 18px;border-radius:8px;background:var(--bg-panel);border:1px solid var(--border)}
-  .board-title.active-turn{color:var(--accent);border-color:var(--accent);box-shadow:0 0 14px rgba(0,180,216,.3)}
+               color:var(--text-dim);padding:8px 20px;border-radius:10px;background:var(--bg-panel);border:1px solid var(--border)}
+  .board-title.active-turn{color:var(--accent);border-color:var(--accent);box-shadow:0 0 20px rgba(0,180,216,.4)}
   .board-wrapper{display:grid;grid-template-columns:var(--cell-min) repeat(10, var(--cell-min));
     grid-template-rows:var(--cell-min) repeat(10, var(--cell-min));gap:3px;background:var(--bg-panel);
-    border:2px solid var(--border);border-radius:10px;padding:8px;box-shadow:var(--shadow);user-select:none}
+    border:2px solid var(--border);border-radius:12px;padding:8px;box-shadow:var(--shadow);user-select:none}
   .coord-label{display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;color:var(--text-dim)}
   .cell{width:var(--cell-min);height:var(--cell-min);background:var(--bg-cell);
         border:1px solid rgba(30,77,107,.6);border-radius:4px;cursor:pointer;
@@ -100,60 +149,63 @@
   .cell.hit::after,.cell.sunk::after{content:'✕';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1.4rem;font-weight:900;color:#fff;text-shadow:0 0 8px rgba(255,0,0,.9);z-index:2}
   .cell.miss{background:var(--miss);border-color:#5a7b92}
   .cell.miss::after{content:'';position:absolute;top:50%;left:50%;width:10px;height:10px;background:#9bb8cc;border-radius:50%;transform:translate(-50%,-50%)}
-  .status-bar{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;align-items:center;background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;padding:12px 22px;margin:14px 0;font-size:.92rem;box-shadow:var(--shadow)}
+  .status-bar{display:flex;gap:24px;flex-wrap:wrap;justify-content:center;align-items:center;background:var(--bg-panel);border:1px solid var(--border);border-radius:14px;padding:14px 24px;margin:14px 0;font-size:.92rem;box-shadow:var(--shadow)}
   .status-turn{font-weight:700;color:var(--accent);font-size:1rem;letter-spacing:1px}
   .status-turn.enemy{color:var(--hit)}
   .score-item{color:var(--text-dim)} .score-item strong{color:var(--text)}
   .fleet-list{display:flex;flex-direction:column;gap:6px}
-  .fleet-item{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:8px;background:rgba(30,77,107,.25);border:1px solid transparent;cursor:pointer}
+  .fleet-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:rgba(30,77,107,.25);border:1px solid transparent;cursor:pointer}
   .fleet-item.active{border-color:var(--accent);background:rgba(0,180,216,.12)}
   .fleet-item.done{opacity:.45;cursor:default;pointer-events:none}
-  .fleet-deck{width:15px;height:15px;background:linear-gradient(160deg,#5ab4d4,#2d6f8a);border-radius:2px;border:1px solid #6bc4e0;position:relative}
-  .fleet-deck::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:5px;height:5px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#a8e2f5,#4a9ebe)}
+  .fleet-deck{width:16px;height:16px;background:linear-gradient(160deg,#5ab4d4,#2d6f8a);border-radius:3px;border:1px solid #6bc4e0;position:relative}
+  .fleet-deck::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:6px;height:6px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#a8e2f5,#4a9ebe)}
   .fleet-item[data-size="1"] .fleet-deck{border-radius:50%}
-  .fleet-label{flex:1;font-size:.82rem;font-weight:600}
+  .fleet-label{flex:1;font-size:.85rem;font-weight:600}
   .fleet-count{font-size:.8rem;color:var(--text-dim);font-weight:700}
-  .result-box{background:var(--bg-panel);border:2px solid var(--border);border-radius:20px;padding:36px 44px;text-align:center;box-shadow:var(--shadow);max-width:440px}
-  .result-box.win{border-color:var(--valid);box-shadow:0 0 40px rgba(46,204,113,.3)}
-  .result-box.lose{border-color:var(--hit);box-shadow:0 0 40px rgba(231,76,60,.3)}
-  .result-icon{font-size:3.5rem;margin-bottom:12px}
-  .result-title{font-size:1.6rem;font-weight:900;text-transform:uppercase;letter-spacing:3px;margin-bottom:10px}
+  .result-box{background:var(--bg-panel);border:2px solid var(--border);border-radius:24px;padding:40px 48px;text-align:center;box-shadow:var(--shadow);max-width:440px}
+  .result-box.win{border-color:var(--valid);box-shadow:0 0 50px rgba(46,204,113,.3)}
+  .result-box.lose{border-color:var(--hit);box-shadow:0 0 50px rgba(231,76,60,.3)}
+  .result-icon{font-size:4rem;margin-bottom:16px}
+  .result-title{font-size:1.8rem;font-weight:900;text-transform:uppercase;letter-spacing:3px;margin-bottom:12px}
   .result-box.win .result-title{color:var(--valid)} .result-box.lose .result-title{color:var(--hit)}
-  .result-sub{color:var(--text-dim);margin-bottom:20px;font-size:.92rem}
-  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg-panel);border:1px solid var(--accent);border-radius:10px;padding:10px 22px;font-size:.88rem;color:var(--accent);opacity:0;transition:all .3s;z-index:200;pointer-events:none;max-width:90vw;text-align:center}
+  .result-sub{color:var(--text-dim);margin-bottom:24px;font-size:.95rem}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg-panel);border:1px solid var(--accent);border-radius:12px;padding:12px 24px;font-size:.9rem;color:var(--accent);opacity:0;transition:all .3s cubic-bezier(0.175, 0.885, 0.32, 1.275);z-index:200;pointer-events:none;max-width:90vw;text-align:center;box-shadow:0 0 30px rgba(0,180,216,.3)}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
   /* ================= СУДОКУ ================= */
-  .sudoku-header { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 400px; margin-bottom: 15px; }
+  .sudoku-header { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 450px; margin-bottom: 20px; }
   .sudoku-grid { 
     display: grid; grid-template-columns: repeat(9, 1fr); 
     gap: 1px; background: var(--s-border-thick); 
-    border: 3px solid var(--s-border-thick); border-radius: 8px; 
+    border: 3px solid var(--s-border-thick); border-radius: 12px; 
     width: 100%; max-width: 450px; aspect-ratio: 1; 
-    box-shadow: var(--shadow);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden;
   }
   .s-cell {
     background: var(--s-cell); display: flex; align-items: center; justify-content: center;
-    font-size: 1.5rem; font-weight: 600; color: var(--accent); cursor: pointer;
-    transition: background 0.15s;
+    font-size: 1.6rem; font-weight: 600; color: var(--accent); cursor: pointer;
+    transition: background 0.15s, color 0.15s;
   }
   .s-cell:hover { background: var(--s-highlight); }
   .s-cell.fixed { color: var(--s-text-fixed); background: var(--s-cell-fixed); font-weight: 400; }
-  .s-cell.selected { background: var(--s-highlight) !important; box-shadow: inset 0 0 0 2px var(--accent); }
+  .s-cell.selected { background: var(--s-highlight) !important; box-shadow: inset 0 0 0 3px var(--accent); z-index: 1;}
   .s-cell.highlighted { background: rgba(42, 90, 122, 0.6); }
-  .s-cell.same-number { background: rgba(0, 180, 216, 0.15); }
-  .s-cell.error { color: var(--s-error); }
+  .s-cell.same-number { background: rgba(0, 180, 216, 0.2); font-weight: 900;}
+  .s-cell.error { color: var(--s-error); background: rgba(231, 76, 60, 0.2); }
   .s-cell.box-right { border-right: 2px solid var(--s-border-thick); }
   .s-cell.box-bottom { border-bottom: 2px solid var(--s-border-thick); }
   
-  .numpad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; max-width: 450px; margin-top: 15px; }
-  .numpad .btn { padding: 15px 0; font-size: 1.2rem; border-radius: 8px; }
+  .numpad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; width: 100%; max-width: 450px; margin-top: 20px; }
+  .numpad .btn { padding: 18px 0; font-size: 1.3rem; border-radius: 12px; }
   .sudoku-controls { display: flex; gap: 10px; width: 100%; max-width: 450px; margin-top: 15px; }
 
   @media (max-width:820px){
     :root{--cell-min:30px}
     .game-container{flex-direction:column;align-items:center;gap:24px}
-    .sudoku-grid{max-width: 100%; font-size: 1.2rem;}
+    .sudoku-grid{max-width: 100%; }
+    .game-card { height: 220px; }
+    .game-icon { font-size: 4rem; }
+    .game-title { font-size: 1.3rem; }
   }
   @media (max-width:520px){
     :root{--cell-min:26px}
@@ -161,7 +213,8 @@
     .cell.hit::after,.cell.sunk::after{font-size:1rem}
     .code-display{font-size:2.2rem;letter-spacing:6px}
     .sudoku-grid { font-size: 1rem; }
-    .s-cell { font-size: 1.2rem; }
+    .s-cell { font-size: 1.3rem; }
+    .numpad .btn { padding: 12px 0; font-size: 1.1rem; }
   }
 </style>
 </head>
@@ -169,15 +222,23 @@
 
 <!-- ================= ГЛАВНОЕ МЕНЮ ================= -->
 <div class="screen active" id="screenMainMenu">
-  <h1>Игровой портал</h1>
-  <h2>Выберите игру</h2>
-  <div class="panel" style="display: flex; gap: 20px; max-width: 600px;">
-    <button class="btn btn-accent menu-btn" onclick="showScreen('screenLobby')">
-      <span class="menu-icon">⚓</span> Морской бой
-    </button>
-    <button class="btn menu-btn" onclick="showScreen('screenSudokuSelect')">
-      <span class="menu-icon">🧩</span> Судоку
-    </button>
+  <h1>Игровой Портал</h1>
+  <h2>Выберите во что хотите сыграть</h2>
+  
+  <div class="menu-container">
+    <!-- Карточка Морской бой -->
+    <div class="game-card" onclick="showScreen('screenLobby')">
+      <div class="game-icon">⚓</div>
+      <div class="game-title">Морской бой</div>
+      <div class="game-subtitle">Классика, Онлайн, ИИ</div>
+    </div>
+
+    <!-- Карточка Судоку -->
+    <div class="game-card sudoku" onclick="showScreen('screenSudokuSelect')">
+      <div class="game-icon">🧩</div>
+      <div class="game-title">Судоку</div>
+      <div class="game-subtitle">4 уровня сложности</div>
+    </div>
   </div>
 </div>
 
@@ -299,7 +360,7 @@
 <div class="screen" id="screenSudokuGame">
   <div class="sudoku-header">
     <button class="btn btn-small" onclick="showScreen('screenSudokuSelect')">← Назад</button>
-    <div style="font-size: 1.2rem; font-weight: bold; color: var(--accent);" id="sudokuTimer">00:00</div>
+    <div style="font-size: 1.3rem; font-weight: bold; color: var(--accent); text-shadow: 0 0 10px rgba(0,180,216,.4);" id="sudokuTimer">00:00</div>
   </div>
   
   <div class="sudoku-grid" id="sudokuGrid"></div>
@@ -314,10 +375,10 @@
     <button class="btn" onclick="sudokuInput(7)">7</button>
     <button class="btn" onclick="sudokuInput(8)">8</button>
     <button class="btn" onclick="sudokuInput(9)">9</button>
-    <button class="btn" style="background:var(--s-error); color:#fff;" onclick="sudokuInput(0)">✖</button>
+    <button class="btn" style="background:var(--s-error); color:#fff; border-color:#c0392b;" onclick="sudokuInput(0)">✖</button>
   </div>
   <div class="sudoku-controls">
-    <button class="btn" style="width:100%" onclick="sudokuHint()">💡 Подсказка (1 ошибка)</button>
+    <button class="btn" style="width:100%" onclick="sudokuHint()">💡 Подсказка</button>
   </div>
 </div>
 
@@ -335,7 +396,6 @@ function $(id){ return document.getElementById(id); }
 window.showScreen = function(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   $(id).classList.add('active');
-  // Останавливаем таймер судоку, если уходим с экрана
   if (id !== 'screenSudokuGame' && S.sudokuTimerId) {
     clearInterval(S.sudokuTimerId);
     S.sudokuTimerId = null;
@@ -373,7 +433,6 @@ const S = {
   orientation: 'h', placedCount: [], activeFleetIdx: 0,
   mySunk: 0, enemySunk: 0, aiHuntQueue: [], aiHits: [],
   
-  // Судоку
   sudokuSolution: [], sudokuGridData: [], sudokuFixed: [],
   sudokuSelected: null, sudokuTimerId: null, sudokuSeconds: 0
 };
@@ -384,35 +443,25 @@ const S = {
 function inside(r,c){ return r>=0 && r<SIZE && c>=0 && c<SIZE; }
 function createGrid(){
   const g = [];
-  for(let r=0;r<SIZE;r++){
-    g.push([]);
-    for(let c=0;c<SIZE;c++) g[r].push({ship:null, shot:false, sunk:false, autoMiss:false});
-  }
+  for(let r=0;r<SIZE;r++){ g.push([]); for(let c=0;c<SIZE;c++) g[r].push({ship:null, shot:false, sunk:false, autoMiss:false}); }
   return g;
 }
 function buildBoardDOM(container, onClick){
   container.innerHTML = '';
   const corner = document.createElement('div'); corner.className = 'coord-label'; container.appendChild(corner);
-  for(let c=0;c<SIZE;c++){
-    const l = document.createElement('div'); l.className = 'coord-label'; l.textContent = LETTERS[c]; container.appendChild(l);
-  }
+  for(let c=0;c<SIZE;c++){ const l = document.createElement('div'); l.className = 'coord-label'; l.textContent = LETTERS[c]; container.appendChild(l); }
   for(let r=0;r<SIZE;r++){
     const rl = document.createElement('div'); rl.className = 'coord-label'; rl.textContent = String(r+1); container.appendChild(rl);
     for(let c=0;c<SIZE;c++){
-      const cell = document.createElement('div'); cell.className = 'cell';
-      cell.dataset.r = r; cell.dataset.c = c;
-      cell.addEventListener('click', ()=>{ if(onClick) onClick(r,c); });
-      container.appendChild(cell);
+      const cell = document.createElement('div'); cell.className = 'cell'; cell.dataset.r = r; cell.dataset.c = c;
+      cell.addEventListener('click', ()=>{ if(onClick) onClick(r,c); }); container.appendChild(cell);
     }
   }
 }
 
 function setConnection(online, text){
-  S.connected = online;
-  $('connDot').classList.toggle('online', online);
-  $('connText').textContent = text;
-  $('btnCreate').disabled = !online;
-  $('btnJoin').disabled = !online;
+  S.connected = online; $('connDot').classList.toggle('online', online);
+  $('connText').textContent = text; $('btnCreate').disabled = !online; $('btnJoin').disabled = !online;
 }
 
 function connect(){
@@ -439,13 +488,10 @@ function wsSend(msg){
 }
 
 function updateGameMode() {
-  S.gameMode = $('gameModeSelect').value;
-  S.fleetConfig = FLEET_PRESETS[S.gameMode];
-  S.totalShips = S.fleetConfig.reduce((sum, f) => sum + f.count, 0);
-  S.placedCount = new Array(S.fleetConfig.length).fill(0);
+  S.gameMode = $('gameModeSelect').value; S.fleetConfig = FLEET_PRESETS[S.gameMode];
+  S.totalShips = S.fleetConfig.reduce((sum, f) => sum + f.count, 0); S.placedCount = new Array(S.fleetConfig.length).fill(0);
 }
-$('gameModeSelect').addEventListener('change', updateGameMode);
-updateGameMode();
+$('gameModeSelect').addEventListener('change', updateGameMode); updateGameMode();
 
 document.querySelectorAll('.btn-ai').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -462,18 +508,13 @@ $('btnJoin').addEventListener('click', ()=>{
   if(!/^\d{1,4}$/.test(code)){ $('statusJoin').textContent = 'Введите код из 3 цифр'; $('statusJoin').className = 'status err'; return; }
   S.mode = 'online'; doJoin(code);
 });
-function doJoin(code){
-  $('statusJoin').textContent = 'Подключение…'; $('statusJoin').className = 'status';
-  wsSend({type:'join', roomId: code});
-}
+function doJoin(code){ $('statusJoin').textContent = 'Подключение…'; $('statusJoin').className = 'status'; wsSend({type:'join', roomId: code}); }
 
 function handleMessage(msg){
   switch(msg.type){
     case 'created':
-      S.roomId = msg.roomId; S.slot = msg.slot;
-      $('roomCodeDisplay').style.display = 'block'; $('roomCodeDisplay').textContent = msg.roomId;
-      $('statusCreate').innerHTML = 'Код: <strong>' + msg.roomId + '</strong><br><small>Ждем друга...</small>';
-      $('statusCreate').className = 'status ok'; break;
+      S.roomId = msg.roomId; S.slot = msg.slot; $('roomCodeDisplay').style.display = 'block'; $('roomCodeDisplay').textContent = msg.roomId;
+      $('statusCreate').innerHTML = 'Код: <strong>' + msg.roomId + '</strong><br><small>Ждем друга...</small>'; $('statusCreate').className = 'status ok'; break;
     case 'joined':
       S.roomId = msg.roomId; S.slot = msg.slot;
       if (msg.gameMode) {
@@ -483,8 +524,7 @@ function handleMessage(msg){
       }
       $('statusJoin').textContent = 'Подключено! Ждём начала…'; $('statusJoin').className = 'status ok'; break;
     case 'error':
-      $('statusJoin').textContent = msg.message; $('statusJoin').className = 'status err';
-      $('btnCreate').disabled = false; break;
+      $('statusJoin').textContent = msg.message; $('statusJoin').className = 'status err'; $('btnCreate').disabled = false; break;
     case 'opponent-joined': toast('Соперник подключился!'); startPlacement(); break;
     case 'opponent-ready': $('statusPlacement').textContent = 'Соперник готов. Ждём старта…'; $('statusPlacement').className = 'status ok'; break;
     case 'start': startGame(msg.yourTurn); break;
@@ -835,15 +875,11 @@ window.startSudoku = function(diff) {
   while (removed < cellsToRemove) {
     let r = Math.floor(Math.random() * 9);
     let c = Math.floor(Math.random() * 9);
-    if (S.sudokuGridData[r][c] !== 0) {
-      S.sudokuGridData[r][c] = 0;
-      removed++;
-    }
+    if (S.sudokuGridData[r][c] !== 0) { S.sudokuGridData[r][c] = 0; removed++; }
   }
   for(let r=0; r<9; r++) for(let c=0; c<9; c++) if(S.sudokuGridData[r][c] !== 0) S.sudokuFixed[r][c] = true;
 
-  S.sudokuSelected = null;
-  S.sudokuSeconds = 0;
+  S.sudokuSelected = null; S.sudokuSeconds = 0;
   if (S.sudokuTimerId) clearInterval(S.sudokuTimerId);
   $('sudokuTimer').textContent = '00:00';
   S.sudokuTimerId = setInterval(() => {
@@ -863,41 +899,23 @@ window.renderSudoku = function() {
   
   for (let r = 0; r < 9; r++) {
     for (let c = 0; c < 9; c++) {
-      const cell = document.createElement('div');
-      cell.className = 's-cell';
-      cell.dataset.r = r;
-      cell.dataset.c = c;
-      
+      const cell = document.createElement('div'); cell.className = 's-cell'; cell.dataset.r = r; cell.dataset.c = c;
       if (r === 2 || r === 5) cell.classList.add('box-bottom');
       if (c === 2 || c === 5) cell.classList.add('box-right');
-      
       if (S.sudokuFixed[r][c]) cell.classList.add('fixed');
-      
-      if (S.sudokuGridData[r][c] !== 0) {
-        cell.textContent = S.sudokuGridData[r][c];
-      }
+      if (S.sudokuGridData[r][c] !== 0) cell.textContent = S.sudokuGridData[r][c];
       
       if (S.sudokuSelected) {
         const sr = S.sudokuSelected.r, sc = S.sudokuSelected.c;
         if (r === sr && c === sc) cell.classList.add('selected');
         else if (r === sr || c === sc) cell.classList.add('highlighted');
-        
         const selVal = S.sudokuGridData[sr][sc];
-        if (selVal !== 0 && S.sudokuGridData[r][c] === selVal && (r !== sr || c !== sc)) {
-          cell.classList.add('same-number');
-        }
+        if (selVal !== 0 && S.sudokuGridData[r][c] === selVal && (r !== sr || c !== sc)) cell.classList.add('same-number');
       }
       
-      // Проверка на ошибки
-      if (S.sudokuGridData[r][c] !== 0 && S.sudokuGridData[r][c] !== S.sudokuSolution[r][c]) {
-        cell.classList.add('error');
-      }
+      if (S.sudokuGridData[r][c] !== 0 && S.sudokuGridData[r][c] !== S.sudokuSolution[r][c]) cell.classList.add('error');
       
-      cell.addEventListener('click', () => {
-        S.sudokuSelected = { r, c };
-        renderSudoku();
-      });
-      
+      cell.addEventListener('click', () => { S.sudokuSelected = { r, c }; renderSudoku(); });
       grid.appendChild(cell);
     }
   }
@@ -907,20 +925,14 @@ window.sudokuInput = function(num) {
   if (!S.sudokuSelected) return;
   const { r, c } = S.sudokuSelected;
   if (S.sudokuFixed[r][c]) return;
-  
-  S.sudokuGridData[r][c] = num;
-  renderSudoku();
-  checkSudokuWin();
+  S.sudokuGridData[r][c] = num; renderSudoku(); checkSudokuWin();
 }
 
 window.sudokuHint = function() {
   if (!S.sudokuSelected) { toast('Выберите клетку'); return; }
   const { r, c } = S.sudokuSelected;
   if (S.sudokuFixed[r][c]) { toast('Эта клетка изначально заполнена'); return; }
-  
-  S.sudokuGridData[r][c] = S.sudokuSolution[r][c];
-  renderSudoku();
-  checkSudokuWin();
+  S.sudokuGridData[r][c] = S.sudokuSolution[r][c]; renderSudoku(); checkSudokuWin();
 }
 
 function checkSudokuWin() {
@@ -940,14 +952,12 @@ function checkSudokuWin() {
   }
 }
 
-// Слушатель клавиатуры для Судоку
 window.addEventListener('keydown', (e) => {
   if (!$('screenSudokuGame').classList.contains('active')) return;
   if (e.key >= '1' && e.key <= '9') sudokuInput(parseInt(e.key));
   if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') sudokuInput(0);
 });
 
-// Запуск подключения WebSocket (для Морского боя)
 connect();
 
 })();
