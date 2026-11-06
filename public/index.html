@@ -1197,23 +1197,18 @@ function renderChessBoard() {
     lastMove = S.chessHistoryView > 0 ? h[S.chessHistoryView-1] : null;
   }
 
-  // Если мы играем за черных, доска переворачивается
   const isFlipped = S.chessPlayerColor === 'b';
   
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
-      // displayR и displayC - это визуальные координаты на экране
       const displayR = isFlipped ? 7 - r : r;
       const displayC = isFlipped ? 7 - c : c;
       
-      // А это реальные координаты на доске
       const piece = boardState[displayR][displayC];
       const squareEl = document.createElement('div');
       
       const isLight = (displayR + displayC) % 2 === 0;
       squareEl.className = `chess-square ${isLight ? 'light' : 'dark'}`;
-      
-      // Важно: передаем РЕАЛЬНЫЕ координаты для обработки клика
       squareEl.dataset.r = displayR;
       squareEl.dataset.c = displayC;
       
@@ -1281,8 +1276,6 @@ function onChessSquareClick(r, c) {
   const currentTurn = S.chessGame.turn();
   if (currentTurn !== S.chessPlayerColor) return; 
   
-  // ВАЖНО: r и c тут - это ВИЗУАЛЬНЫЕ координаты. 
-  // Нам нужно перевести их в РЕАЛЬНЫЕ, чтобы сделать ход.
   const isFlipped = S.chessPlayerColor === 'b';
   const realR = isFlipped ? 7 - r : r;
   const realC = isFlipped ? 7 - c : c;
