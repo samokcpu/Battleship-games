@@ -23,8 +23,6 @@
 
     /* Шахматы (стиль Chess.com) */
     --chess-light: #eeeed2; --chess-dark: #769656;
-    --chess-hl: rgba(255, 255, 0, 0.5); 
-    --chess-last: rgba(255, 255, 0, 0.4);
   }
   *{margin:0;padding:0;box-sizing:border-box}
   body{
@@ -157,27 +155,22 @@
   .numpad .btn { padding: 18px 0; font-size: 1.3rem; border-radius: 12px; }
   .sudoku-controls { display: flex; gap: 10px; width: 100%; max-width: 450px; margin-top: 15px; }
 
-  /* ================= ШАХМАТЫ ================= */
-  .chess-layout { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 600px; margin: 0 auto; }
-  .chess-player-bar { display: flex; justify-content: space-between; align-items: center; background: var(--bg-panel); padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border); }
-  .chess-player-info { display: flex; align-items: center; gap: 10px; }
-  .chess-avatar { width: 32px; height: 32px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
-  .chess-name { font-weight: bold; font-size: 1rem; }
-  .chess-captured { display: flex; flex-wrap: wrap; gap: 0px; font-size: 1.2rem; color: var(--text-dim); align-items: center; min-height: 24px; line-height: 1;}
-  .chess-timer { display: none !important; }
-
+  /* ================= ШАХМАТЫ (Простая версия) ================= */
+  .chess-layout { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 500px; margin: 0 auto; }
+  
   .chess-board-container {
     position: relative; width: 100%; aspect-ratio: 1;
     display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
     border: 4px solid var(--border); border-radius: 6px; box-shadow: var(--shadow); overflow: hidden;
   }
-  .chess-square { display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none; position: relative; }
-  .chess-square svg { width: 85%; height: 85%; pointer-events: none; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2)); }
-  
+  .chess-square {
+    display: flex; align-items: center; justify-content: center;
+    font-size: clamp(2.5rem, 8vw, 3.5rem); cursor: pointer; user-select: none;
+    position: relative; color: #333;
+  }
   .chess-square.light { background: var(--chess-light); }
   .chess-square.dark { background: var(--chess-dark); }
   .chess-square.selected { background: rgba(255, 255, 0, 0.5) !important; }
-  .chess-square.last-move { background: rgba(255, 255, 0, 0.4) !important; }
   
   .chess-square.valid-move::after {
     content: ''; width: 30%; height: 30%; background: rgba(0,0,0,0.15); border-radius: 50%;
@@ -188,10 +181,13 @@
     position: absolute; pointer-events: none; box-sizing: border-box;
   }
 
-  .chess-controls-row { display: flex; gap: 8px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
-  .chess-move-history { height: 80px; overflow-y: auto; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 8px; font-size: 0.9rem; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
-  .move-item { color: var(--text-dim); }
-  .move-item span { color: var(--text); font-weight: bold; margin-right: 4px; }
+  .chess-controls-row {
+    display: flex; gap: 8px; justify-content: center; margin-top: 10px; flex-wrap: wrap;
+  }
+  
+  .chess-status {
+    font-size: 1.2rem; font-weight: bold; text-align: center; padding: 15px; background: var(--bg-panel); border-radius: 12px; border: 1px solid var(--border);
+  }
 
   @media (max-width:820px){
     :root{--cell-min:30px}
@@ -239,7 +235,7 @@
     <button class="btn btn-small" onclick="showScreen('screenMainMenu')">← В меню</button>
   </div>
   <h1>♟️ Шахматы</h1>
-
+  
   <div class="panel">
     <h3>Игра с компьютером</h3>
     <div class="btn-row" style="margin-bottom:0">
@@ -270,42 +266,11 @@
 <!-- ================= ШАХМАТЫ: ИГРА ================= -->
 <div class="screen" id="screenChessGame">
   <div class="chess-layout">
-    
-    <!-- Панель противника (сверху) -->
-    <div class="chess-player-bar">
-      <div class="chess-player-info">
-        <div class="chess-avatar">👤</div>
-        <div class="chess-name" id="chessOpponentName">Соперник</div>
-        <div class="chess-captured" id="chessOpponentCaptured"></div>
-      </div>
-      <div class="chess-timer" id="chessTimerOpponent">05:00</div>
-    </div>
-
-    <!-- Доска -->
     <div class="chess-board-container" id="chessBoard"></div>
-
-    <!-- Панель игрока (снизу) -->
-    <div class="chess-player-bar">
-      <div class="chess-player-info">
-        <div class="chess-avatar">😎</div>
-        <div class="chess-name">Вы</div>
-        <div class="chess-captured" id="chessPlayerCaptured"></div>
-      </div>
-      <div class="chess-timer active" id="chessTimerPlayer">05:00</div>
-    </div>
-
-    <!-- Кнопки управления -->
+    <div class="chess-status" id="chessStatus">Ваш ход (Белые)</div>
     <div class="chess-controls-row">
-      <button class="btn btn-small" onclick="showScreen('screenChessLobby')">🏳️ Сдаться</button>
-      <button class="btn btn-small" id="btnChessDraw">🤝 Ничья</button>
-      <button class="btn btn-small" id="btnChessUndo">⏪ Назад</button>
-      <button class="btn btn-small" id="btnChessRedo">⏩ Вперед</button>
-      <button class="btn btn-small btn-accent" id="btnChessReturn" style="display:none;">Вернуться</button>
+      <button class="btn btn-small" onclick="showScreen('screenChessLobby')">← Сдаться</button>
     </div>
-    
-    <!-- История ходов (видна только игроку) -->
-    <div class="chess-move-history" id="chessMoveHistory"></div>
-
   </div>
 </div>
 
@@ -503,28 +468,7 @@ const S = {
   chessPlayerColor: 'w', 
   chessIsBot: false,
   chessSelected: null,
-  chessHistoryView: -1,
   chessMatchActive: false
-};
-
-/* ================= ФИГУРЫ (SVG) ================= */
-const PIECE_SVGS = {
-  'w': {
-    'k': '<svg viewBox="0 0 45 45"><g fill="#fff" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22.5 11.63V6M20 8h5" stroke-linejoin="miter"/><path d="M22.5 25s4.5-7.5 3-10.5c0 0-1-2.5-3-2.5s-3 2.5-3 2.5c-1.5 3 3 10.5 3 10.5" fill="#fff" stroke-linecap="butt" stroke-linejoin="miter"/><path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-7s9-4.5 6-10.5c-4-6.5-13.5-3.5-16 4V27v-3.5c-3.5-7.5-13-10.5-16-4-3 6 5 10 5 10V37z"/><path d="M11.5 30c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0"/></g></svg>',
-    'q': '<svg viewBox="0 0 45 45"><g fill="#fff" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM24.5 7.5a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM41 12a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM16 8.5a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM33 9a2 2 0 1 1-4 0 2 2 0 1 1 4 0z"/><path d="M9 26c8.5-1.5 21-1.5 27 0l2-12-7 11V11l-5.5 13.5-3-15-3 15-5.5-14V25L7 14l2 12z" stroke-linecap="butt"/><path d="M9 26c0 2 1.5 2 2.5 4 1 1.5 1 1 .5 3.5-1.5 1-1.5 2.5-1.5 2.5-1.5 1.5.5 2.5.5 2.5 6.5 1 16.5 1 23 0 0 0 1.5-1 0-2.5 0 0 .5-1.5-1-2.5-.5-2.5-.5-2 .5-3.5 1-2 2.5-2 2.5-4-8.5-1.5-18.5-1.5-27 0z" stroke-linecap="butt"/><path d="M11.5 30c3.5-1 18.5-1 22 0M12 33.5c6-1 15-1 21 0" fill="none"/></g></svg>',
-    'r': '<svg viewBox="0 0 45 45"><g fill="#fff" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 39h27v-3H9v3zM12 36v-4h21v4H12zM11 14V9h4v2h5V9h5v2h5V9h4v5" stroke-linecap="butt"/><path d="M34 14l-3 3H14l-3-3"/><path d="M31 17v12.5H14V17" stroke-linecap="butt" stroke-linejoin="miter"/><path d="M31 29.5l1.5 2.5h-20l1.5-2.5"/><path d="M11 14h23" fill="none" stroke-linejoin="miter"/></g></svg>',
-    'b': '<svg viewBox="0 0 45 45"><g fill="#fff" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><g fill="#fff" stroke-linecap="butt"><path d="M9 36c3.39-.97 10.11.43 13.5-2 3.39 2.43 10.11 1.03 13.5 2 0 0 1.65.54 3 2-.68.97-1.65.99-3 .5-3.39-.97-10.11.46-13.5-1-3.39 1.46-10.11.03-13.5 1-1.354.49-2.323.47-3-.5 1.354-1.94 3-2 3-2z"/><path d="M15 32c2.5 2.5 12.5 2.5 15 0 .5-1.5 0-2 0-2 0-2.5-2.5-4-2.5-4 5.5-1.5 6-11.5-5-15.5-11 4-10.5 14-5 15.5 0 0-2.5 1.5-2.5 4 0 0-.5.5 0 2z"/><path d="M25 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 1 1 5 0z"/></g><path d="M17.5 26h10M15 30h15m-7.5-14.5v5M20 18h5" stroke-linejoin="miter"/></g></svg>',
-    'n': '<svg viewBox="0 0 45 45"><g fill="none" fill-rule="evenodd" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10c10.5 1 16.5 8 16 29H15c0-9 10-6.5 8-21" fill="#fff"/><path d="M24 18c.38 2.91-5.55 7.37-8 9-3 2-2.82 4.34-5 4-1.042-.94 1.41-3.04 0-3-1 0 .19 1.23-1 2-1 0-4.003 1-4-4 0-2 6-12 6-12s1.89-1.9 2-3.5c-.73-.994-.5-2-.5-3 1-1 3 2.5 3 2.5h2s.78-1.992 2.5-3c1 0 1 3 1 3" fill="#fff"/><path d="M9.5 25.5a.5.5 0 1 1-1 0 .5.5 0 1 1 1 0zM14.933 15.75a.5 1.5 30 1 1-.866-.5.5 1.5 30 1 1 .866.5z" fill="#000" stroke="#000"/></g></svg>',
-    'p': '<svg viewBox="0 0 45 45"><path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03-3 1.06-7.41 5.55-7.41 13.47h23c0-7.92-4.41-12.41-7.41-13.47 1.47-1.19 2.41-3 2.41-5.03 0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" fill="#fff" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>'
-  },
-  'b': {
-    'k': '<svg viewBox="0 0 45 45"><g fill="#000" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22.5 11.63V6M20 8h5" stroke-linejoin="miter"/><path d="M22.5 25s4.5-7.5 3-10.5c0 0-1-2.5-3-2.5s-3 2.5-3 2.5c-1.5 3 3 10.5 3 10.5" fill="#000" stroke-linecap="butt" stroke-linejoin="miter"/><path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-7s9-4.5 6-10.5c-4-6.5-13.5-3.5-16 4V27v-3.5c-3.5-7.5-13-10.5-16-4-3 6 5 10 5 10V37z"/><path d="M11.5 30c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0m-21 3.5c5.5-3 15.5-3 21 0" fill="none" stroke="#fff"/></g></svg>',
-    'q': '<svg viewBox="0 0 45 45"><g fill="#000" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM24.5 7.5a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM41 12a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM16 8.5a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM33 9a2 2 0 1 1-4 0 2 2 0 1 1 4 0z"/><path d="M9 26c8.5-1.5 21-1.5 27 0l2-12-7 11V11l-5.5 13.5-3-15-3 15-5.5-14V25L7 14l2 12z" stroke-linecap="butt"/><path d="M9 26c0 2 1.5 2 2.5 4 1 1.5 1 1 .5 3.5-1.5 1-1.5 2.5-1.5 2.5-1.5 1.5.5 2.5.5 2.5 6.5 1 16.5 1 23 0 0 0 1.5-1 0-2.5 0 0 .5-1.5-1-2.5-.5-2.5-.5-2 .5-3.5 1-2 2.5-2 2.5-4-8.5-1.5-18.5-1.5-27 0z" stroke-linecap="butt"/><path d="M11.5 30c3.5-1 18.5-1 22 0M12 33.5c6-1 15-1 21 0" fill="none" stroke="#fff"/></g></svg>',
-    'r': '<svg viewBox="0 0 45 45"><g fill="#000" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 39h27v-3H9v3zM12.5 32l1.5-2.5h17l1.5 2.5h-20zM12 36v-4h21v4H12z" stroke-linecap="butt"/><path d="M14 29.5v-13h17v13H14z" stroke-linecap="butt" stroke-linejoin="miter"/><path d="M14 16.5L11 14h23l-3 2.5H14zM11 14V9h4v2h5V9h5v2h5V9h4v5H11z" stroke-linecap="butt"/><path d="M12 35.5h21M13 31.5h19M14 29.5h17M14 16.5h17M11 14h23" fill="none" stroke="#fff" stroke-width="1" stroke-linejoin="miter"/></g></svg>',
-    'b': '<svg viewBox="0 0 45 45"><g fill="#000" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><g fill="#000" stroke-linecap="butt"><path d="M9 36c3.39-.97 10.11.43 13.5-2 3.39 2.43 10.11 1.03 13.5 2 0 0 1.65.54 3 2-.68.97-1.65.99-3 .5-3.39-.97-10.11.46-13.5-1-3.39 1.46-10.11.03-13.5 1-1.354.49-2.323.47-3-.5 1.354-1.94 3-2 3-2z"/><path d="M15 32c2.5 2.5 12.5 2.5 15 0 .5-1.5 0-2 0-2 0-2.5-2.5-4-2.5-4 5.5-1.5 6-11.5-5-15.5-11 4-10.5 14-5 15.5 0 0-2.5 1.5-2.5 4 0 0-.5.5 0 2z"/><path d="M25 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 1 1 5 0z"/></g><path d="M17.5 26h10M15 30h15m-7.5-14.5v5M20 18h5" stroke="#fff" stroke-linejoin="miter"/></g></svg>',
-    'n': '<svg viewBox="0 0 45 45"><g fill="none" fill-rule="evenodd" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10c10.5 1 16.5 8 16 29H15c0-9 10-6.5 8-21" fill="#000"/><path d="M24 18c.38 2.91-5.55 7.37-8 9-3 2-2.82 4.34-5 4-1.042-.94 1.41-3.04 0-3-1 0 .19 1.23-1 2-1 0-4.003 1-4-4 0-2 6-12 6-12s1.89-1.9 2-3.5c-.73-.994-.5-2-.5-3 1-1 3 2.5 3 2.5h2s.78-1.992 2.5-3c1 0 1 3 1 3" fill="#000"/><path d="M9.5 25.5a.5.5 0 1 1-1 0 .5.5 0 1 1 1 0zM14.933 15.75a.5 1.5 30 1 1-.866-.5.5 1.5 30 1 1 .866.5z" fill="#fff" stroke="#fff"/></g></svg>',
-    'p': '<svg viewBox="0 0 45 45"><path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03-3 1.06-7.41 5.55-7.41 13.47h23c0-7.92-4.41-12.41-7.41-13.47 1.47-1.19 2.41-3 2.41-5.03 0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" fill="#000" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>'
-  }
 };
 
 /* ================= WEB SOCKET ================= */
@@ -577,28 +521,12 @@ function handleMessage(msg){
   }
   if(msg.type === 'opponent-move') {
     if(!S.chessMatchActive) return;
-    if(S.chessHistoryView !== -1) { S.chessHistoryView = -1; }
-
     const move = S.chessGame.move({ from: msg.from, to: msg.to, promotion: 'q' });
     if(move) { 
-      updateChessHistoryUI();
       renderChessBoard(); 
       updateChessStatus(); 
       checkChessGameOver();
     }
-    return;
-  }
-  if(msg.type === 'chess-draw-offer') {
-    if(confirm('Соперник предлагает ничью. Согласны?')) {
-      wsSend({type:'chess-draw-accept'});
-      endChessGame('Ничья по согласию');
-    } else {
-      toast('Вы отклонили ничью');
-    }
-    return;
-  }
-  if(msg.type === 'chess-draw-accept') {
-    endChessGame('Ничья по согласию');
     return;
   }
   if(msg.type === 'opponent-left') {
@@ -1105,63 +1033,27 @@ window.addEventListener('keydown', (e) => {
 });
 
 
-/* ================= ШАХМАТЫ ================= */
+/* ================= ШАХМАТЫ (Простая версия) ================= */
+const CHESS_UNICODE = {
+  'w': { 'k': '♔', 'q': '♕', 'r': '♖', 'b': '♗', 'n': '♘', 'p': '♙' },
+  'b': { 'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟' }
+};
+
 $('btnCreateChess').addEventListener('click', ()=>{ $('chessStatusCreate').textContent = 'Создаём…'; wsSend({type:'create', gameMode: 'chess'}); });
 $('btnJoinChess').addEventListener('click', ()=>{ const code = $('inputChessRoom').value.trim(); if(!/^\d{1,4}$/.test(code)){ $('chessStatusJoin').textContent = 'Введите код'; return; } wsSend({type:'join', roomId: code}); });
 document.querySelectorAll('.btn-chess-ai').forEach(btn => {
   btn.addEventListener('click', () => { S.chessPlayerColor = 'w'; startChessGame(true); });
 });
 
-$('btnChessDraw').addEventListener('click', () => {
-  if(!S.chessIsBot) {
-    wsSend({type:'chess-draw-offer'});
-    toast('Вы предложили ничью. Ждём ответа...');
-  } else {
-    if(confirm('Согласны на ничью с ботом?')) endChessGame('Ничья');
-  }
-});
-
-$('btnChessUndo').addEventListener('click', () => {
-  const history = S.chessGame.history();
-  if(history.length === 0) return;
-  
-  if(S.chessHistoryView === -1) S.chessHistoryView = history.length;
-  if(S.chessHistoryView > 0) S.chessHistoryView--;
-  
-  renderChessBoard();
-  $('btnChessReturn').style.display = S.chessHistoryView !== -1 ? 'block' : 'none';
-  toast('Режим просмотра');
-});
-
-$('btnChessRedo').addEventListener('click', () => {
-  const history = S.chessGame.history();
-  if(S.chessHistoryView === -1) return;
-  
-  if(S.chessHistoryView < history.length) S.chessHistoryView++;
-  if(S.chessHistoryView === history.length) S.chessHistoryView = -1;
-  
-  renderChessBoard();
-  $('btnChessReturn').style.display = S.chessHistoryView !== -1 ? 'block' : 'none';
-});
-
-$('btnChessReturn').addEventListener('click', () => {
-  S.chessHistoryView = -1;
-  renderChessBoard();
-  $('btnChessReturn').style.display = 'none';
-});
-
 function startChessGame(isBot) {
   S.chessIsBot = isBot;
   S.chessGame = new Chess();
   S.chessSelected = null;
-  S.chessHistoryView = -1;
   S.chessMatchActive = true;
   
   showScreen('screenChessGame');
-  updateChessHistoryUI();
   renderChessBoard();
   updateChessStatus();
-  $('btnChessReturn').style.display = 'none';
 }
 
 function endChessGame(reason) {
@@ -1170,59 +1062,29 @@ function endChessGame(reason) {
   showScreen('screenChessLobby');
 }
 
-function updateChessHistoryUI() {
-  const history = S.chessGame.history();
-  const historyEl = $('chessMoveHistory');
-  historyEl.innerHTML = history.map((move, i) => `<div class="move-item"><span>${Math.floor(i/2)+1}${i%2===0?'.':'...'}</span>${move}</div>`).join('');
-  historyEl.scrollTop = historyEl.scrollHeight;
-}
-
 function renderChessBoard() {
   const boardEl = $('chessBoard');
   boardEl.innerHTML = '';
   
-  let boardState, lastMove;
-  
-  if(S.chessHistoryView === -1) {
-    boardState = S.chessGame.board();
-    const h = S.chessGame.history({verbose: true});
-    lastMove = h.length > 0 ? h[h.length-1] : null;
-  } else {
-    const tempGame = new Chess();
-    const h = S.chessGame.history({verbose: true});
-    for(let i=0; i<S.chessHistoryView; i++) {
-      tempGame.move(h[i]);
-    }
-    boardState = tempGame.board();
-    lastMove = S.chessHistoryView > 0 ? h[S.chessHistoryView-1] : null;
-  }
-
-  const isFlipped = S.chessPlayerColor === 'b';
+  const boardState = S.chessGame.board();
   
   for (let r = 0; r < 8; r++) {
     for (let c = 0; c < 8; c++) {
-      const displayR = isFlipped ? 7 - r : r;
-      const displayC = isFlipped ? 7 - c : c;
-      
-      const piece = boardState[displayR][displayC];
+      const piece = boardState[r][c];
       const squareEl = document.createElement('div');
       
-      const isLight = (displayR + displayC) % 2 === 0;
+      const isLight = (r + c) % 2 === 0;
       squareEl.className = `chess-square ${isLight ? 'light' : 'dark'}`;
-      squareEl.dataset.r = displayR;
-      squareEl.dataset.c = displayC;
+      squareEl.dataset.r = r;
+      squareEl.dataset.c = c;
       
-      const squareName = S.chessGame.SQUARES[displayR * 8 + displayC];
+      const squareName = S.chessGame.SQUARES[r * 8 + c];
       
-      if(lastMove && (lastMove.from === squareName || lastMove.to === squareName)) {
-        squareEl.classList.add('last-move');
-      }
-      
-      if (S.chessSelected && S.chessSelected.r === displayR && S.chessSelected.c === displayC && S.chessHistoryView === -1) {
+      if (S.chessSelected && S.chessSelected.r === r && S.chessSelected.c === c) {
         squareEl.classList.add('selected');
       }
       
-      if (S.chessSelected && S.chessHistoryView === -1) {
+      if (S.chessSelected) {
         const moves = S.chessGame.moves({ square: S.chessGame.SQUARES[S.chessSelected.r * 8 + S.chessSelected.c], verbose: true });
         const move = moves.find(m => m.to === squareName);
         if (move) {
@@ -1230,57 +1092,21 @@ function renderChessBoard() {
         }
       }
       
-      if (piece) squareEl.innerHTML = PIECE_SVGS[piece.color][piece.type];
+      if (piece) squareEl.textContent = CHESS_UNICODE[piece.color][piece.type];
       
-      squareEl.addEventListener('click', () => onChessSquareClick(displayR, displayC));
+      squareEl.addEventListener('click', () => onChessSquareClick(r, c));
       boardEl.appendChild(squareEl);
     }
   }
-  updateCapturedPiecesUI();
-}
-
-function updateCapturedPiecesUI() {
-  const history = S.chessGame.history({verbose: true});
-  const capturedW = []; 
-  const capturedB = []; 
-  
-  const limit = S.chessHistoryView === -1 ? history.length : S.chessHistoryView;
-  
-  for(let i=0; i<limit; i++) {
-    const move = history[i];
-    if(move.captured) {
-      if(move.color === 'w') capturedW.push(move.captured);
-      else capturedB.push(move.captured);
-    }
-  }
-  
-  const myCaptured = S.chessPlayerColor === 'w' ? capturedW : capturedB;
-  const oppCaptured = S.chessPlayerColor === 'w' ? capturedB : capturedW;
-  
-  const format = (arr, color) => arr.map(p => PIECE_SVGS[color][p]).join('');
-  
-  $('chessPlayerCaptured').innerHTML = format(myCaptured, S.chessPlayerColor === 'w' ? 'b' : 'w');
-  $('chessOpponentCaptured').innerHTML = format(oppCaptured, S.chessPlayerColor === 'w' ? 'w' : 'b');
 }
 
 function onChessSquareClick(r, c) {
   if (!S.chessMatchActive || S.chessGame.game_over()) return;
   
-  if(S.chessHistoryView !== -1) {
-    S.chessHistoryView = -1;
-    $('btnChessReturn').style.display = 'none';
-    renderChessBoard();
-    return;
-  }
-  
   const currentTurn = S.chessGame.turn();
   if (currentTurn !== S.chessPlayerColor) return; 
   
-  const isFlipped = S.chessPlayerColor === 'b';
-  const realR = isFlipped ? 7 - r : r;
-  const realC = isFlipped ? 7 - c : c;
-  
-  const square = S.chessGame.SQUARES[realR * 8 + realC];
+  const square = S.chessGame.SQUARES[r * 8 + c];
   const piece = S.chessGame.get(square);
   
   if (S.chessSelected) {
@@ -1288,8 +1114,6 @@ function onChessSquareClick(r, c) {
     const move = S.chessGame.move({ from: fromSquare, to: square, promotion: 'q' });
     if (move) {
       S.chessSelected = null;
-      
-      updateChessHistoryUI();
       renderChessBoard();
       updateChessStatus();
       checkChessGameOver();
@@ -1303,7 +1127,7 @@ function onChessSquareClick(r, c) {
     } else { S.chessSelected = null; }
   }
   
-  if (piece && piece.color === S.chessPlayerColor) { S.chessSelected = { r: realR, c: realC }; }
+  if (piece && piece.color === S.chessPlayerColor) { S.chessSelected = { r, c }; }
   renderChessBoard();
 }
 
@@ -1313,8 +1137,6 @@ function makeBotMove() {
   if (moves.length === 0) return;
   const randomMove = moves[Math.floor(Math.random() * moves.length)];
   S.chessGame.move(randomMove);
-  
-  updateChessHistoryUI();
   renderChessBoard();
   updateChessStatus();
   checkChessGameOver();
