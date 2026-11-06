@@ -47,8 +47,7 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'create') {
       const code = genRoomCode();
-      // rematchReq: [false, false] — запросы на реванш от каждого игрока
-      rooms.set(code, { players: [ws, null], ready: [false, false], turn: 0, gameMode: msg.gameMode || 'classic', rematchReq: [false, false] });
+      rooms.set(code, { players: [ws, null], turn: 0, gameMode: msg.gameMode || 'battleship' });
       ws.roomCode = code;
       ws.slot = 0;
       send(ws, { type: 'created', roomId: code, slot: 0, gameMode: msg.gameMode });
@@ -66,8 +65,15 @@ wss.on('connection', (ws) => {
       ws.slot = 1;
       
       send(ws, { type: 'joined', roomId: code, slot: 1, gameMode: room.gameMode });
-      send(room.players[0], { type: 'opponent-joined' });
-      send(room.players[1], { type: 'opponent-joined' }); 
+      
+      // Для шахмат сразу начинаем игру (белые начинают первыми)
+      if (room.gameMode === 'chess') {
+        send(room.players[0], { type: 'start-chess', yourTurn: true, color: 'w' });
+        send(room.players[1], { type: 'start-chess', yourTurn: false, color: 'b' });
+      } else {
+        send(room.players[0], { type: 'opponent-joined' });
+        send(room.players[1], { type: 'opponent-joined' }); 
+      }
       return;
     }
 
@@ -76,24 +82,31 @@ wss.on('connection', (ws) => {
     const opp = room.players[1 - ws.slot];
     if (!opp) return;
 
-    // Обработка реванша
-    if (msg.type === 'rematch') {
-      room.rematchReq[ws.slot] = true;
-      if (room.rematchReq[0] && room.rematchReq[1]) {
-        // Оба готовы — сбрасываем состояние комнаты и начинаем заново
-        room.ready = [false, false];
-        room.turn = 0;
-        room.rematchReq = [false, false];
-        send(room.players[0], { type: 'rematch-start' });
-        send(room.players[1], { type: 'rematch-start' });
-      } else {
-        // Сообщаем второму игроку, что первый хочет реванш
-        send(opp, { type: 'opponent-rematch' });
-      }
+    // Логика пересылки ходов для шахмат
+    if (msg.type === 'chess-move') {
+      if (room.gameMode !== 'chess') return;
+      
+      // Меняем ход
+      room.turn = 1 - room.turn;
+      
+      // Пересылаем ход сопернику
+      send(opp, { 
+        type: 'opponent-move', 
+        from: msg.from, 
+        to: msg.to, 
+        promotion: msg.promotion,
+        checkmate: msg.checkmate 
+      });
+      
+      // Отправляем обновление хода
+      send(room.players[0], { type: 'turn-update', yourTurn: room.turn === 0 });
+      send(room.players[1], { type: 'turn-update', yourTurn: room.turn === 1 });
       return;
     }
 
+    // Логика Морского боя
     if (msg.type === 'fleet-ready') {
+      room.ready = room.ready || [false, false];
       room.ready[ws.slot] = true;
       if (room.ready[0] && room.ready[1]) {
         const first = Math.random() < 0.5 ? 0 : 1;
@@ -136,5 +149,5 @@ wss.on('connection', (ws) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`⚓ Морской бой онлайн: http://localhost:${PORT}`);
+  console.log(`⚓ Игровой портал: http://localhost:${PORT}`);
 });
