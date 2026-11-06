@@ -64,13 +64,14 @@ wss.on('connection', (ws) => {
       ws.roomCode = code;
       ws.slot = 1;
       
-      send(ws, { type: 'joined', roomId: code, slot: 1, gameMode: room.gameMode });
+      // Отправляем обоим подтверждение
+      send(room.players[0], { type: 'joined', roomId: code, slot: 0, gameMode: room.gameMode });
+      send(room.players[1], { type: 'joined', roomId: code, slot: 1, gameMode: room.gameMode });
       
       if (room.gameMode === 'chess') {
-        // Рандомный выбор цвета
-        const firstIsWhite = Math.random() < 0.5;
-        send(room.players[0], { type: 'start-chess', yourTurn: firstIsWhite, color: firstIsWhite ? 'w' : 'b' });
-        send(room.players[1], { type: 'start-chess', yourTurn: !firstIsWhite, color: firstIsWhite ? 'b' : 'w' });
+        // Жестко запускаем игру для обоих
+        send(room.players[0], { type: 'start-chess', color: 'w' });
+        send(room.players[1], { type: 'start-chess', color: 'b' });
       } else {
         send(room.players[0], { type: 'opponent-joined' });
         send(room.players[1], { type: 'opponent-joined' }); 
@@ -84,7 +85,6 @@ wss.on('connection', (ws) => {
     if (!opp) return;
 
     if (msg.type === 'chess-move') {
-      // Просто пересылаем ход сопернику, не меняем room.turn (клиенты сами знают чей ход)
       send(opp, { 
         type: 'opponent-move', 
         from: msg.from, 
